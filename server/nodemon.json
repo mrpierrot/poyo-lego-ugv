@@ -1,5 +1,6 @@
 {
-  "events": {
-    "crash": "osascript -e 'display notification \"app crashed\" with title \"nodemon\"'"
-  }
+    "ignore": ["public/*"],
+    "events": {
+        "crash": "osascript -e 'display notification \"app crashed\" with title \"nodemon\"'"
+    }
 }

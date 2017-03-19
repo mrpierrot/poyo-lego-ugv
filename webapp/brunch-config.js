@@ -24,7 +24,10 @@ exports.paths = {
 }
 
 exports.plugins = {
-  babel: {presets: ['latest']},
+  babel: {
+    presets: ['latest'], 
+    plugins: [ "syntax-jsx", ["transform-react-jsx", {"pragma": "html"}]
+  ]},
   sass: {
     mode: 'native',
     options: {includePaths: [

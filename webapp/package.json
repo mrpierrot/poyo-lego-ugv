@@ -10,13 +10,19 @@
     "build": "brunch build --production"
   },
   "dependencies": {
+    "@cycle/dom": "^16.0.0",
+    "@cycle/run": "^3.0.0",
+    "cycle-socket.io": "^3.0.1",
     "normalize-scss": "^6.0.0",
-    "socket.io-client": "^1.7.3"
+    "snabbdom-jsx": "^0.3.1",
+    "socket.io-client": "^1.7.3",
+    "xstream": "^10.3.0"
   },
   "devDependencies": {
     "auto-reload-brunch": "^2",
     "babel-brunch": "~6.0",
     "babel-preset-latest": "^6",
+    "babel-plugin-transform-react-jsx": "^6.23.0",
     "postcss-brunch": "^2.0.5",
     "postcss-scss": "^0.4.1",
     "sass-brunch": "^2",

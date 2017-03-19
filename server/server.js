@@ -6,8 +6,6 @@ exports.startServer = (port, path, callback)=>{
     const io = require('socket.io')(http);
     const publicPath = __dirname +'/'+ path;
 
-    console.log("path : "+path);
-
     app.use(express.static(publicPath));
 
     app.get('/', function(req, res){
@@ -16,6 +14,10 @@ exports.startServer = (port, path, callback)=>{
 
     io.on('connection', (socket) => {
         console.log('a user connected'); 
+        socket.emit('connected');
+        setInterval(()=>{
+            socket.emit('ping','pong');
+        },1000);
         socket.on('disconnect', () => {
             console.log('user disconnected');
         });
