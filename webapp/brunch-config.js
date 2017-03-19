@@ -8,7 +8,14 @@ exports.files = {
       'app.js': /^app/
     }
   },
-  stylesheets: {joinTo: 'app.css'}
+  stylesheets: {
+    joinTo: {
+      'app.css': /^app/
+    },
+    order:{
+      before:["app/styles.scss"]
+    }
+  }
 };
 
 exports.paths = {
@@ -17,7 +24,18 @@ exports.paths = {
 }
 
 exports.plugins = {
-  babel: {presets: ['latest']}
+  babel: {presets: ['latest']},
+  sass: {
+    mode: 'native',
+    options: {includePaths: [
+      'node_modules/normalize-scss/sass'
+    ]}
+  },
+  postcss: {
+    modules: {
+        generateScopedName: '[name]__[local]___[hash:base64:5]'
+    }
+  }
 };
 
 exports.server = {
