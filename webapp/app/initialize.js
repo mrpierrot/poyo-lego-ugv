@@ -15,15 +15,10 @@ function main({ DOM, socketIO }) {
   })); 
   */
 
-  incomingMessages$.addListener({
-    next: (value) => {
-      console.log('ping? ', value);
-    }
-  });
 
   const sinks = {
-    DOM: xs.periodic(1000).map(i =>
-      <h1>{i} seconds elapsed</h1>
+    DOM: incomingMessages$.map(i =>
+      <h1>{i}</h1>
     ),
     socketIO: outgoingMessages$
   };
