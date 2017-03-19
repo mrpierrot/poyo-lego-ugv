@@ -39,5 +39,5 @@ exports.plugins = {
 };
 
 exports.server = {
-  command: `nodemon --watch ${serverRoot} ${serverRoot}`
+  command: `nodemon --config ${serverRoot}/nodemon.json --watch ${serverRoot} ${serverRoot} `
 }
