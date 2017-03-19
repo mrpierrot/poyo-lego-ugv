@@ -1,4 +1,6 @@
 // See http://brunch.io for documentation.
+const serverRoot = '../server';
+
 exports.files = {
   javascripts: {
     joinTo: {
@@ -9,6 +11,15 @@ exports.files = {
   stylesheets: {joinTo: 'app.css'}
 };
 
+exports.paths = {
+  public: serverRoot+'/public',
+  watched: ['app']
+}
+
 exports.plugins = {
   babel: {presets: ['latest']}
 };
+
+exports.server = {
+  command: `nodemon --watch ${serverRoot} ${serverRoot}`
+}
