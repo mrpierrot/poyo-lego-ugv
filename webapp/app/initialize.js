@@ -7,20 +7,30 @@ import { html } from 'snabbdom-jsx';
 
 function main({ DOM, socketIO }) {
 
+  const start$ = DOM.select('.action-start').events('click');
+  const stop$ = DOM.select('.action-stop').events('click');
   const incomingMessages$ = socketIO.get('ping');
-  const outgoingMessages$ = xs.empty();
-  /*const outgoingMessages$ = stream$.map(eventData => ({
-    messageType: 'someEvent',
+  const startMessages$ = start$.map(eventData => ({
+    messageType: 'start',
     message: eventData,
-  })); 
-  */
+  }));
+
+  const stopMessages$ = stop$.map(eventData => ({
+    messageType: 'stop',
+    message: eventData,
+  }));  
+  
 
 
   const sinks = {
     DOM: incomingMessages$.map(i =>
-      <h1>{i}</h1>
+      <div>
+        <h1>{i}</h1>
+        <button className="action-start">Start</button>
+        <button className="action-stop">Stop</button>
+      </div>
     ),
-    socketIO: outgoingMessages$
+    socketIO: xs.merge(startMessages$,stopMessages$)
   };
   return sinks;
 }

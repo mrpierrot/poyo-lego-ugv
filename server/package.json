@@ -4,12 +4,13 @@
   "description": "Lego UGV server app ",
   "main": "index.js",
   "scripts": {
-    "start":"nodemon",
+    "start": "nodemon",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Pierre Chabiland",
   "license": "Beerware",
   "dependencies": {
+    "ev3dev-lang": "^1.0.0",
     "express": "^4.15.2",
     "nodemon": "^1.11.0",
     "socket.io": "^1.7.3"
