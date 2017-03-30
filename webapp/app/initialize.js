@@ -4,6 +4,7 @@ import { makeDOMDriver } from '@cycle/dom';
 import { makeSocketIODriver } from 'cycle-socket.io';
 import io from 'socket.io-client';
 import { html } from 'snabbdom-jsx';
+import Pad from 'components/Pad';
 
 function main({ DOM, socketIO }) {
 
@@ -19,15 +20,16 @@ function main({ DOM, socketIO }) {
     messageType: 'stop',
     message: eventData,
   }));  
+
+  const aPad = Pad({DOM});
   
-
-
   const sinks = {
     DOM: incomingMessages$.map(i =>
       <div>
         <h1>{i}</h1>
         <button className="action-start">Start</button>
         <button className="action-stop">Stop</button>
+        {aPad.DOM}
       </div>
     ),
     socketIO: xs.merge(startMessages$,stopMessages$)

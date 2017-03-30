@@ -13,7 +13,7 @@ exports.startServer = (port, path, callback) => {
         res.sendFile(publicPath + '/index.html');
     });
 
-    const motor = new ev3dev.Motor();
+    const motor = new ev3dev.Motor('spi0.1:MA');
 
     io.on('connection', (socket) => {
         console.log('a user connected');
