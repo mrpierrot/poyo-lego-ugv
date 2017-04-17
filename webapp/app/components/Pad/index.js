@@ -1,31 +1,37 @@
 import xs from 'xstream';
 import { html } from 'snabbdom-jsx';
 
-function intent(DOM){
-    return DOM.select('.pad-button').events('mousemove').map((e)=>{
-        console.log(e);
-        return e;
-    })
+function intent(DOM) {
+    const pad$ = DOM.select('.pad-base');
+    //pad$.events('mousedown').mapTo(true);
+    return pad$.events('mousemove').map((e) => ({x: e.layerX,y: e.layerY}))
 }
 
-function model(action$,props$){
-    return action$
+function model(action$, props$) {
+    return props$
+        .map((props) => action$
+            .map(({x,y}) => ({ x, y }))
+            .startWith(props)
+        )
+        .flatten();
 }
 
-function view(state$){
-    return state$
+function view(state$) {
+    return (state$.map(({x,y}) =>
+        <div className="pad-base">
+            <div className="pad-button" style={{left:`${x}px`,top:`${y}px`}}></div>
+        </div>
+    ))
 }
 
-function _Pad({DOM,props}) {
+function _Pad({ DOM, props = xs.of({x:0,y:0}) }) {
 
     const action$ = intent(DOM);
-    const state$ = model(action$,props);
+    const state$ = model(action$, props);
     const vdom$ = view(state$);
 
     const sinks = {
-        DOM: vdom$.map((o) => <div>
-            <div className="pad-button"></div>
-        </div>)
+        DOM: vdom$
         /*,
         value: state$.map(state => !!state.showResult)*/
     };

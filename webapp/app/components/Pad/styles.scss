@@ -1,0 +1,19 @@
+.pad-button{
+  position: absolute;
+  width: 64px;
+  height: 64px;
+  background-color: lightcoral;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  pointer-events: none;
+}
+
+.pad-base{
+  width: 128px;
+  height: 128px;
+  background-color: lightskyblue;
+  border-radius: 50%;
+  position: relative;
+}
