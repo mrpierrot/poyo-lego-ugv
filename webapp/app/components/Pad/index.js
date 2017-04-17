@@ -9,7 +9,7 @@ function borderRate(val){
 
 function intent(DOM) {
     const pad$ = DOM.select('.pad-base');
-    const root$ = DOM.select(':root');
+    const root$ = DOM.select('body');
     const mouseDown$ = pad$.events('mousedown');
     const mouseUp$ = root$.events('mouseup').mapTo(true);
     //const mouseLeave$ = root$.events('mouseleave').mapTo(true).debug();
@@ -32,7 +32,15 @@ function intent(DOM) {
 function model(action$, props$) {
     return props$
         .map((props) => action$
-            .map(({ rateX, rateY }) => ({ rateX:borderRate(rateX), rateY:borderRate(rateY) }))
+            .map(({ rateX, rateY }) => {
+                switch(props.mode){
+                    default:
+                    case ALL_DIR_PAD_MODE: return { rateX:borderRate(rateX), rateY:borderRate(rateY) }
+                    case VERTICAL_PAD_MODE: return { rateX:0, rateY:borderRate(rateY) }
+                    case HORIZONTAL_PAD_MODE: return { rateX:borderRate(rateX), rateY:0 }
+                }
+                
+            })
             .startWith(props)
         )
         .flatten()
@@ -48,10 +56,10 @@ function view(state$) {
 }
 
 
-function _Pad({ DOM, props = xs.of({ rateX: 0, rateY: 0 }) }) {
+export function Pad({ DOM, props$ = xs.of({ rateX: 0, rateY: 0, mode: ALL_DIR_PAD_MODE }) }) {
 
     const action$ = intent(DOM);
-    const state$ = model(action$, props);
+    const state$ = model(action$, props$);
     const vdom$ = view(state$);
 
     const sinks = {
@@ -62,4 +70,6 @@ function _Pad({ DOM, props = xs.of({ rateX: 0, rateY: 0 }) }) {
     return sinks;
 }
 
-export default _Pad;
+export const VERTICAL_PAD_MODE = 'VERTICAL_PAD_MODE';
+export const HORIZONTAL_PAD_MODE = 'HORIZONTAL_PAD_MODE';
+export const ALL_DIR_PAD_MODE = 'ALL_DIR_PAD_MODE';

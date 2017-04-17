@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@cycle/dom": "^16.0.0",
+    "@cycle/isolate": "^2.1.0",
     "@cycle/run": "^3.0.0",
     "cycle-socket.io": "^3.0.1",
     "normalize-scss": "^6.0.0",
