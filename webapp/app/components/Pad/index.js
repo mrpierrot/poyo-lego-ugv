@@ -4,17 +4,22 @@ import { html } from 'snabbdom-jsx';
 function intent(DOM) {
     const pad$ = DOM.select('.pad-base');
     const root$ = DOM.select(':root');
-    const mouseDown$ = pad$.events('mousedown').mapTo(true);
+    const mouseDown$ = pad$.events('mousedown');
     const mouseUp$ = root$.events('mouseup').mapTo(true).debug();
     //const mouseLeave$ = root$.events('mouseleave').mapTo(true).debug();
-    const mouseMove$ = root$.events('mousemove').debug();
+    const mouseMove$ = root$.events('mousemove');
 
     return mouseDown$
-        .map(mouseDown => mouseMove$
-            .map(e => ({ x: e.offsetX, y: e.offsetY }))
-            .debug()
-            .endWhen(mouseUp$)
-        )
+        .map(mouseDownEvent => {
+            const { top, left } = mouseDownEvent.target.getBoundingClientRect();
+            return mouseMove$
+                .map(e => {
+                    const xx = e.clientX - left;
+                    const yy = e.clientY - top;
+                    return { x: xx, y: yy }
+                })
+                .endWhen(mouseUp$)
+        })
         .flatten();
 }
 
