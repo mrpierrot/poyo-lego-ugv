@@ -1,15 +1,27 @@
 @import 'normalize/import-now';
 
-
-#app{
+.gamepad-wrapper{
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.gamepad-header{
+
 }
 
 
 .gamepad{
     display: flex;
+    flex: 1 1 auto;
     > *{
         flex: 0 1 auto;
+    }
+
+    .pad-base{
+        align-self: flex-end;
+        margin: 32px;
     }
 }
 

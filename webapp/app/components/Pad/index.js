@@ -10,18 +10,18 @@ function borderRate(val){
 function intent(DOM) {
     const pad$ = DOM.select('.pad-base');
     const root$ = DOM.select('body');
-    const mouseDown$ = pad$.events('mousedown');
-    const mouseUp$ = root$.events('mouseup').mapTo(true);
+    const mouseDown$ = pad$.events('touchstart').debug();
+    const mouseUp$ = root$.events('touchend').mapTo(true);
     //const mouseLeave$ = root$.events('mouseleave').mapTo(true).debug();
-    const mouseMove$ = root$.events('mousemove');
+    const mouseMove$ = root$.events('touchmove');
 
     return mouseDown$
         .map(mouseDownEvent => {
             const { top, left, width, height } = mouseDownEvent.currentTarget.getBoundingClientRect();
             return mouseMove$
                 .map(e => {
-                    const rateX = (e.clientX - left - width*0.5)/(width*0.5);
-                    const rateY = (e.clientY - top - height*0.5)/(height*0.5);
+                    const rateX = (e.touches[0].clientX - left - width*0.5)/(width*0.5);
+                    const rateY = (e.touches[0].clientY - top - height*0.5)/(height*0.5);
                     return { rateX, rateY }
                 })
                 .endWhen(mouseUp$)

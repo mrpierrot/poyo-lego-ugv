@@ -5,7 +5,7 @@ import isolate from '@cycle/isolate';
 import { makeSocketIODriver } from 'cycle-socket.io';
 import io from 'socket.io-client';
 import { html } from 'snabbdom-jsx';
-import {Pad, VERTICAL_PAD_MODE, HORIZONTAL_PAD_MODE} from 'components/Pad';
+import { Pad, VERTICAL_PAD_MODE, HORIZONTAL_PAD_MODE } from 'components/Pad';
 
 
 function main(sources) {
@@ -24,28 +24,31 @@ function main(sources) {
     message: eventData,
   }));
 
-  const leftPad = isolate(Pad,{DOM:'left-pad'})({DOM,props$:xs.of({ rateX: 0, rateY: 0, mode: VERTICAL_PAD_MODE })}); 
-  const rightPad = isolate(Pad,{DOM:'right-pad'})({DOM,props$:xs.of({ rateX: 0, rateY: 0, mode: HORIZONTAL_PAD_MODE })}); 
+  const leftPad = isolate(Pad, { DOM: 'left-pad' })({ DOM, props$: xs.of({ rateX: 0, rateY: 0, mode: VERTICAL_PAD_MODE }) });
+  const rightPad = isolate(Pad, { DOM: 'right-pad' })({ DOM, props$: xs.of({ rateX: 0, rateY: 0, mode: HORIZONTAL_PAD_MODE }) });
 
 
   const sinks = {
-    DOM: xs.combine(incomingMessages$, leftPad.DOM, leftPad.value,rightPad.DOM,rightPad.value)
-      .map(([msg, leftPadDOM, leftPadValue,rightPadDOM,rightPadValue]) =>
-      <div>
-        <h1>{msg}</h1>
-        <button className="action-start">Start</button>
-        <button className="action-stop">Stop</button>
-        <div className="gamepad">
-          {leftPadDOM}
-          <div className="camera-display"></div>
-          {rightPadDOM}
+    DOM: xs.combine(incomingMessages$, leftPad.DOM, leftPad.value, rightPad.DOM, rightPad.value)
+      .map(([msg, leftPadDOM, leftPadValue, rightPadDOM, rightPadValue]) =>
+        <div className="gamepad-wrapper">
+          <header className="gamepad-header">
+            <div>{msg}</div>
+            <button className="action-start">Start</button>
+            <button className="action-stop">Stop</button>
+            {leftPadValue.rateX} {leftPadValue.rateY}
+
+          {rightPadValue.rateX} {rightPadValue.rateY}
+          </header>
+          <div className="gamepad">
+            {leftPadDOM}
+            <div className="camera-display"></div>
+            {rightPadDOM}
+          </div>
+
+          
         </div>
-
-        {leftPadValue.rateX} {leftPadValue.rateY}
-
-        {rightPadValue.rateX} {rightPadValue.rateY}
-      </div>
-    ),
+      ),
     socketIO: xs.merge(startMessages$, stopMessages$)
   };
   return sinks;
