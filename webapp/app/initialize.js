@@ -22,14 +22,16 @@ function main({ DOM, socketIO }) {
   }));  
 
   const leftPad = Pad({DOM});
+  leftPad.value.debug('left pad : ');
 
   const sinks = {
-    DOM: xs.combine(incomingMessages$,leftPad.DOM).map(([msg,leftPadDOM]) =>
+    DOM: xs.combine(incomingMessages$,leftPad.DOM,leftPad.value).map(([msg,leftPadDOM,leftPadValue]) =>
       <div>
         <h1>{msg}</h1>
         <button className="action-start">Start</button>
         <button className="action-stop">Stop</button>
         {leftPadDOM}
+        {leftPadValue.rateX} {leftPadValue.rateY}
       </div>
     ),
     socketIO: xs.merge(startMessages$,stopMessages$)
