@@ -22,7 +22,7 @@ function main({ DOM, socketIO }) {
   }));  
 
   const leftPad = Pad({DOM});
-  
+
   const sinks = {
     DOM: xs.combine(incomingMessages$,leftPad.DOM).map(([msg,leftPadDOM]) =>
       <div>

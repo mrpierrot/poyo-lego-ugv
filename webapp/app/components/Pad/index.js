@@ -24,6 +24,7 @@ function view(state$) {
     ))
 }
 
+
 function _Pad({ DOM, props = xs.of({x:0,y:0}) }) {
 
     const action$ = intent(DOM);
