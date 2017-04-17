@@ -1,5 +1,5 @@
 const server = require('./server');
-
-server.startServer(process.env.PORT || 3333,'./public',()=>{
-    console.log('server started');  
+const port = process.env.PORT || 3333;
+server.startServer(port,'./public',()=>{
+    console.log('server started on port ',port);  
 })

@@ -10,7 +10,7 @@ function main({ DOM, socketIO }) {
 
   const start$ = DOM.select('.action-start').events('click');
   const stop$ = DOM.select('.action-stop').events('click');
-  const incomingMessages$ = socketIO.get('ping');
+  const incomingMessages$ = socketIO.get('ping').startWith('none');
   const startMessages$ = start$.map(eventData => ({
     messageType: 'start',
     message: eventData,
@@ -21,15 +21,15 @@ function main({ DOM, socketIO }) {
     message: eventData,
   }));  
 
-  const aPad = Pad({DOM});
+  const leftPad = Pad({DOM,props:xs.of({x:0,y:0})});
   
   const sinks = {
-    DOM: incomingMessages$.map(i =>
+    DOM: xs.combine(incomingMessages$,leftPad.DOM).map(([msg,leftPadDOM]) =>
       <div>
-        <h1>{i}</h1>
+        <h1>{msg}</h1>
         <button className="action-start">Start</button>
         <button className="action-stop">Stop</button>
-        {aPad.DOM}
+        {leftPadDOM}
       </div>
     ),
     socketIO: xs.merge(startMessages$,stopMessages$)
