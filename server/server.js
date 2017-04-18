@@ -1,12 +1,19 @@
 const express = require('express');
 const ev3dev = require('ev3dev-lang');
+const fs = require('fs');
+
+const options = {
+    key: fs.readFileSync(__dirname+'/certs/key.pem'),
+    cert: fs.readFileSync(__dirname+'/certs/cert.pem')
+};
 
 exports.startServer = (port, path, callback) => {
     const app = express();
-    const http = require('http').Server(app);
-    const io = require('socket.io')(http);
+    const https = require('https').createServer(options, app);
+    const io = require('socket.io')(https);
     const publicPath = __dirname + '/' + path;
 
+   
     app.use(express.static(publicPath));
 
     app.get('/', function (req, res) {
@@ -44,6 +51,6 @@ exports.startServer = (port, path, callback) => {
         });
     });
 
-    http.listen(port, callback);
+    https.listen(port, callback);
 };
 
