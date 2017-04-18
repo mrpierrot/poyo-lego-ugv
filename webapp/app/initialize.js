@@ -7,6 +7,15 @@ import io from 'socket.io-client';
 import { html } from 'snabbdom-jsx';
 import { Pad, VERTICAL_PAD_MODE, HORIZONTAL_PAD_MODE } from 'components/Pad';
 
+// Register the service worker if available.
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').then(function(reg) {
+        console.log('Successfully registered service worker', reg);
+    }).catch(function(err) {
+        console.warn('Error whilst registering service worker', err);
+    });
+}
+
 
 function main(sources) {
 
