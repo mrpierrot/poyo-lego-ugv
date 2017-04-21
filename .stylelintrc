@@ -1,0 +1,9 @@
+{
+    "extends": "stylelint-config-standard",
+    "rules": {
+        "indentation": null,
+        "selector-nested-pattern": "^&",
+        "shorthand-property-no-redundant-values": null,
+        "color-hex-length": null
+    }
+}

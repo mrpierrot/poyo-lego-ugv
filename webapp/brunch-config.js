@@ -13,7 +13,7 @@ exports.files = {
       'app.css': /^app/
     },
     order:{
-      before:["app/styles.scss"]
+      before:["app/styles.css"]
     }
   }
 };
@@ -28,15 +28,22 @@ exports.plugins = {
     presets: ['latest'], 
     plugins: [ "syntax-jsx", ["transform-react-jsx", {"pragma": "html"}]
   ]},
-  sass: {
-    mode: 'native',
-    options: {includePaths: [
-      'node_modules/normalize-scss/sass'
-    ]}
-  },
   postcss: {
-    modules: {
-        generateScopedName: '[name]__[local]___[hash:base64:5]'
+    processors: [
+      require("postcss-import")(/*{
+        plugins: [
+          require("stylelint")({configBasedir:'.' })
+        ]
+      }*/),
+      // require("postcss-url")(),
+      require("postcss-cssnext")(),
+      require("postcss-browser-reporter")(),
+      require("postcss-reporter")()
+    ],
+    options: {
+      use: [
+        require('postcss-nesting')({ /* options */ })
+      ]
     }
   }
 };

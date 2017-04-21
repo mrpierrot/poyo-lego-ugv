@@ -1,30 +1,30 @@
-@import 'normalize/import-now';
+@import 'normalize.css';
 
-.gamepad-wrapper{
+.gamepad-wrapper {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     overflow: hidden;
 }
 
-.gamepad-header{
+.gamepad-header {
 
 }
 
-
-.gamepad{
+.gamepad {
     display: flex;
     flex: 1 1 auto;
-    > *{
+
+    & > * {
         flex: 0 1 auto;
     }
 
-    .pad-base{
+    & .pad-base {
         align-self: flex-end;
         margin: 32px;
     }
 }
 
-.camera-display{
+.camera-display {
     flex: 1 1 auto;
 }

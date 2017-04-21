@@ -17,6 +17,9 @@
     "ev3dev",
     "cyclejs"
   ],
+  "devDependencies": {
+    "stylelint-config-standard": "^16.0.0"
+  },
   "author": "Pierre Chabiland",
   "license": "Beerware"
 }
