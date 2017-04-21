@@ -1,5 +1,6 @@
 import xs from 'xstream';
 import { html } from 'snabbdom-jsx';
+import _ from 'lodash';
 
 function borderRate(val){
     if(val < -1) return -1;
@@ -10,21 +11,32 @@ function borderRate(val){
 function intent(DOM) {
     const stick$ = DOM.select('.stick-base');
     const root$ = DOM.select('body');
-    const mouseDown$ = stick$.events('touchstart').debug();
-    const mouseUp$ = root$.events('touchend').mapTo(true);
+    const touchStart$ = stick$.events('touchstart').debug();
+    const touchEnd$ = root$.events('touchend').debug().mapTo(true);
     //const mouseLeave$ = root$.events('mouseleave').mapTo(true).debug();
-    const mouseMove$ = root$.events('touchmove');
+    const touchMove$ = root$.events('touchmove');
 
-    return mouseDown$
-        .map(mouseDownEvent => {
-            const { top, left, width, height } = mouseDownEvent.currentTarget.getBoundingClientRect();
-            return mouseMove$
+    return touchStart$
+        .map(touchStartEvent => {
+            const { top, left, width, height } = touchStartEvent.currentTarget.getBoundingClientRect();
+            const changedTouches = touchStartEvent.changedTouches;
+            console.log(changedTouches)
+            return touchMove$
+                .filter(e => 
+                    _.some(e.changedTouches,
+                        (o) =>  _.some(changedTouches,a => a.identifier == o.identifier) 
+                    )
+                )
                 .map(e => {
                     const rateX = (e.touches[0].clientX - left - width*0.5)/(width*0.5);
                     const rateY = (e.touches[0].clientY - top - height*0.5)/(height*0.5);
                     return { rateX, rateY }
                 })
-                .endWhen(mouseUp$)
+                .endWhen(touchEnd$.filter(e => 
+                    _.some(e.changedTouches,
+                        (o) =>  _.some(changedTouches,a => a.identifier == o.identifier) 
+                    )
+                ))
         })
         .flatten();
 }
