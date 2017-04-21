@@ -5,7 +5,7 @@ import isolate from '@cycle/isolate';
 import { makeSocketIODriver } from 'cycle-socket.io';
 import io from 'socket.io-client';
 import { html } from 'snabbdom-jsx';
-import { Pad, VERTICAL_PAD_MODE, HORIZONTAL_PAD_MODE } from 'components/Pad';
+import { Stick, VERTICAL_STICK_MODE, HORIZONTAL_STICK_MODE } from 'components/Stick';
 
 // Register the service worker if available.
 if ('serviceWorker' in navigator) {
@@ -33,26 +33,26 @@ function main(sources) {
     message: eventData,
   }));
 
-  const leftPad = isolate(Pad, { DOM: 'left-pad' })({ DOM, props$: xs.of({ rateX: 0, rateY: 0, mode: VERTICAL_PAD_MODE }) });
-  const rightPad = isolate(Pad, { DOM: 'right-pad' })({ DOM, props$: xs.of({ rateX: 0, rateY: 0, mode: HORIZONTAL_PAD_MODE }) });
+  const leftStick = isolate(Stick, { DOM: 'left-stick' })({ DOM, props$: xs.of({ rateX: 0, rateY: 0, mode: VERTICAL_STICK_MODE }) });
+  const rightStick = isolate(Stick, { DOM: 'right-stick' })({ DOM, props$: xs.of({ rateX: 0, rateY: 0, mode: HORIZONTAL_STICK_MODE }) });
 
 
   const sinks = {
-    DOM: xs.combine(incomingMessages$, leftPad.DOM, leftPad.value, rightPad.DOM, rightPad.value)
-      .map(([msg, leftPadDOM, leftPadValue, rightPadDOM, rightPadValue]) =>
-        <div className="gamepad-wrapper">
-          <header className="gamepad-header">
+    DOM: xs.combine(incomingMessages$, leftStick.DOM, leftStick.value, rightStick.DOM, rightStick.value)
+      .map(([msg, leftStickDOM, leftStickValue, rightStickDOM, rightStickValue]) =>
+        <div className="gamestick-wrapper">
+          <header className="gamestick-header">
             <div>{msg}</div>
             <button className="action-start">Start</button>
             <button className="action-stop">Stop</button>
-            {leftPadValue.rateX} {leftPadValue.rateY}
+            {leftStickValue.rateX} {leftStickValue.rateY}
 
-          {rightPadValue.rateX} {rightPadValue.rateY}
+          {rightStickValue.rateX} {rightStickValue.rateY}
           </header>
-          <div className="gamepad">
-            {leftPadDOM}
+          <div className="gamestick">
+            {leftStickDOM}
             <div className="camera-display"></div>
-            {rightPadDOM}
+            {rightStickDOM}
           </div>
 
           

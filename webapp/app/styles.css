@@ -1,17 +1,17 @@
 @import 'normalize.css';
 
-.gamepad-wrapper {
+.gamestick-wrapper {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     overflow: hidden;
 }
 
-.gamepad-header {
+.gamestick-header {
 
 }
 
-.gamepad {
+.gamestick {
     display: flex;
     flex: 1 1 auto;
 
@@ -19,7 +19,7 @@
         flex: 0 1 auto;
     }
 
-    & .pad-base {
+    & .stick-base {
         align-self: flex-end;
         margin: 32px;
     }

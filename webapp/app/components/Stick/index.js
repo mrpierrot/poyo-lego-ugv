@@ -8,9 +8,9 @@ function borderRate(val){
 }
 
 function intent(DOM) {
-    const pad$ = DOM.select('.pad-base');
+    const stick$ = DOM.select('.stick-base');
     const root$ = DOM.select('body');
-    const mouseDown$ = pad$.events('touchstart').debug();
+    const mouseDown$ = stick$.events('touchstart').debug();
     const mouseUp$ = root$.events('touchend').mapTo(true);
     //const mouseLeave$ = root$.events('mouseleave').mapTo(true).debug();
     const mouseMove$ = root$.events('touchmove');
@@ -35,9 +35,9 @@ function model(action$, props$) {
             .map(({ rateX, rateY }) => {
                 switch(props.mode){
                     default:
-                    case ALL_DIR_PAD_MODE: return { rateX:borderRate(rateX), rateY:borderRate(rateY) }
-                    case VERTICAL_PAD_MODE: return { rateX:0, rateY:borderRate(rateY) }
-                    case HORIZONTAL_PAD_MODE: return { rateX:borderRate(rateX), rateY:0 }
+                    case ALL_DIR_STICK_MODE: return { rateX:borderRate(rateX), rateY:borderRate(rateY) }
+                    case VERTICAL_STICK_MODE: return { rateX:0, rateY:borderRate(rateY) }
+                    case HORIZONTAL_STICK_MODE: return { rateX:borderRate(rateX), rateY:0 }
                 }
                 
             })
@@ -49,14 +49,14 @@ function model(action$, props$) {
 
 function view(state$) {
     return (state$.map(({ rateX, rateY }) =>
-        <div className="pad-base">
-            <div className="pad-button" style={{ left: `calc(50% + ${rateX*50}%)`, top: `calc(50% + ${rateY*50}%)` }}></div>
+        <div className="stick-base">
+            <div className="stick-button" style={{ left: `calc(50% + ${rateX*50}%)`, top: `calc(50% + ${rateY*50}%)` }}></div>
         </div>
     ))
 }
 
 
-export function Pad({ DOM, props$ = xs.of({ rateX: 0, rateY: 0, mode: ALL_DIR_PAD_MODE }) }) {
+export function Stick({ DOM, props$ = xs.of({ rateX: 0, rateY: 0, mode: ALL_DIR_STICK_MODE }) }) {
 
     const action$ = intent(DOM);
     const state$ = model(action$, props$);
@@ -70,6 +70,6 @@ export function Pad({ DOM, props$ = xs.of({ rateX: 0, rateY: 0, mode: ALL_DIR_PA
     return sinks;
 }
 
-export const VERTICAL_PAD_MODE = 'VERTICAL_PAD_MODE';
-export const HORIZONTAL_PAD_MODE = 'HORIZONTAL_PAD_MODE';
-export const ALL_DIR_PAD_MODE = 'ALL_DIR_PAD_MODE';
+export const VERTICAL_STICK_MODE = 'VERTICAL_STICK_MODE';
+export const HORIZONTAL_STICK_MODE = 'HORIZONTAL_STICK_MODE';
+export const ALL_DIR_STICK_MODE = 'ALL_DIR_STICK_MODE';

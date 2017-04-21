@@ -1,4 +1,4 @@
-.pad-button {
+.stick-button {
   position: absolute;
   width: 64px;
   height: 64px;
@@ -7,7 +7,7 @@
   transform: translate(-50%,-50%);
 }
 
-.pad-base {
+.stick-base {
   width: 128px;
   height: 128px;
   background-color: lightskyblue;
