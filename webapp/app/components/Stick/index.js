@@ -19,22 +19,25 @@ function intent(DOM) {
     return touchStart$
         .map(touchStartEvent => {
             const { top, left, width, height } = touchStartEvent.currentTarget.getBoundingClientRect();
-            const changedTouches = touchStartEvent.changedTouches;
-            console.log(changedTouches)
+            const targetTouches = touchStartEvent.targetTouches;
+            console.log('start',_.map(targetTouches,'identifier'));
             return touchMove$
+                .debug(o => {
+                    console.log('move',_.map(o.targetTouches,'identifier'));
+                })
                 .filter(e => 
-                    _.some(e.changedTouches,
-                        (o) =>  _.some(changedTouches,a => a.identifier == o.identifier) 
+                    _.some(e.targetTouches,
+                        (o) =>  _.some(targetTouches,a => a.identifier == o.identifier) 
                     )
                 )
                 .map(e => {
-                    const rateX = (e.touches[0].clientX - left - width*0.5)/(width*0.5);
-                    const rateY = (e.touches[0].clientY - top - height*0.5)/(height*0.5);
+                    const rateX = (e.targetTouches[0].clientX - left - width*0.5)/(width*0.5);
+                    const rateY = (e.targetTouches[0].clientY - top - height*0.5)/(height*0.5);
                     return { rateX, rateY }
                 })
                 .endWhen(touchEnd$.filter(e => 
-                    _.some(e.changedTouches,
-                        (o) =>  _.some(changedTouches,a => a.identifier == o.identifier) 
+                    _.some(e.targetTouches,
+                        (o) =>  _.some(targetTouches,a => a.identifier == o.identifier) 
                     )
                 ))
         })

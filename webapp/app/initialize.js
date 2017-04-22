@@ -8,13 +8,13 @@ import { html } from 'snabbdom-jsx';
 import { Stick, VERTICAL_STICK_MODE, HORIZONTAL_STICK_MODE } from 'components/Stick';
 
 // Register the service worker if available.
-if ('serviceWorker' in navigator) {
+/*if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').then(function(reg) {
         console.log('Successfully registered service worker', reg);
     }).catch(function(err) {
         console.warn('Error whilst registering service worker', err);
     });
-}
+}*/
 
 
 function main(sources) {

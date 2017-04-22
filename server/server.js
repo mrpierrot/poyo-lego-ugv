@@ -9,7 +9,8 @@ const options = {
 
 exports.startServer = (port, path, callback) => {
     const app = express();
-    const https = require('https').createServer(options, app);
+    //const https = require('https').createServer(options, app);
+    const https = require('http').createServer(app);
     const io = require('socket.io')(https);
     const publicPath = __dirname + '/' + path;
 
