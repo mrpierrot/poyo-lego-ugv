@@ -1,5 +1,9 @@
 @import 'normalize.css';
 
+body {
+    overflow: hidden;
+}
+
 .gamestick-wrapper {
     min-height: 100vh;
     display: flex;
