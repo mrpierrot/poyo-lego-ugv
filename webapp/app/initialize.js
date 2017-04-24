@@ -59,7 +59,7 @@ function main(sources) {
         </div>
       ),
     socketIO: xs.merge(startMessages$, stopMessages$),
-    fullscreen:fullscreen$
+    fullscreen: fullscreen$
   };
   return sinks;
 }
@@ -67,7 +67,7 @@ function main(sources) {
 const drivers = {
   DOM: makeDOMDriver('#app'),
   socketIO: makeSocketIODriver(io()),
-  fullscreen:makeFullscreenDriver()
+  fullscreen: makeFullscreenDriver()
 };
 
 run(main, drivers);

@@ -11,20 +11,17 @@ function borderRate(val){
 function intent(DOM) {
     const stick$ = DOM.select('.stick-base');
     const root$ = DOM.select('body');
-    const touchStart$ = stick$.events('touchstart').debug();
-    const touchEnd$ = root$.events('touchend').debug().mapTo(true);
-    //const mouseLeave$ = root$.events('mouseleave').mapTo(true).debug();
+    const touchStart$ = stick$.events('touchstart');
+    const touchEnd$ = root$.events('touchend');
+    const touchcancel$ = root$.events('touchcancel');
     const touchMove$ = root$.events('touchmove');
 
     return touchStart$
         .map(touchStartEvent => {
             const { top, left, width, height } = touchStartEvent.currentTarget.getBoundingClientRect();
             const targetTouches = touchStartEvent.targetTouches;
-            console.log('start',_.map(targetTouches,'identifier'));
+            //console.log('start',_.map(targetTouches,'identifier'));
             return touchMove$
-                .debug(o => {
-                    console.log('move',_.map(o.targetTouches,'identifier'));
-                })
                 .filter(e => 
                     _.some(e.targetTouches,
                         (o) =>  _.some(targetTouches,a => a.identifier == o.identifier) 
@@ -35,9 +32,9 @@ function intent(DOM) {
                     const rateY = (e.targetTouches[0].clientY - top - height*0.5)/(height*0.5);
                     return { rateX, rateY }
                 })
-                .endWhen(touchEnd$.filter(e => 
-                    _.some(e.targetTouches,
-                        (o) =>  _.some(targetTouches,a => a.identifier == o.identifier) 
+                .endWhen(xs.merge(touchEnd$,touchcancel$).debug('end?').filter(e => 
+                    _.some(e.changedTouches,
+                        (o) =>  _.some(targetTouches,a => a.identifier == o.identifier)
                     )
                 ))
         })
