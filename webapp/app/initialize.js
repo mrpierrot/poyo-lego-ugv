@@ -35,8 +35,8 @@ function main(sources) {
     message: eventData,
   }));
 
-  const leftStick = isolate(Stick, { DOM: 'left-stick' })({ DOM, props$: xs.of({ rateX: 0, rateY: 0, mode: VERTICAL_STICK_MODE }) });
-  const rightStick = isolate(Stick, { DOM: 'right-stick' })({ DOM, props$: xs.of({ rateX: 0, rateY: 0, mode: HORIZONTAL_STICK_MODE }) });
+  const leftStick = isolate(Stick, { DOM: 'left-stick' })({ DOM, props$: xs.of({ rateX: 0, rateY: 0, mode: HORIZONTAL_STICK_MODE }) });
+  const rightStick = isolate(Stick, { DOM: 'right-stick' })({ DOM, props$: xs.of({ rateX: 0, rateY: 0, mode: VERTICAL_STICK_MODE }) });
 
 
   const sinks = {
