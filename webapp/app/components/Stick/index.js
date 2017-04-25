@@ -35,11 +35,13 @@ function intent(DOM) {
                     )
                 )
                 .map(e => {
-                    const rateX = (e.targetTouches[0].clientX - left - width*0.5)/(width*0.5);
-                    const rateY = (e.targetTouches[0].clientY - top - height*0.5)/(height*0.5);
-                    return { rateX, rateY }
+                    return { 
+                        x:e.targetTouches[0].clientX,
+                        y:e.targetTouches[0].clientY,
+                        top, left, width, height 
+                    }
                 })
-                .endWhen(xs.merge(touchEnd$,touchcancel$).debug('end?').filter(e => 
+                .endWhen(xs.merge(touchEnd$,touchcancel$).filter(e => 
                     _.some(e.changedTouches,
                         (o) =>  _.some(targetTouches,a => a.identifier == o.identifier)
                     )
@@ -51,7 +53,9 @@ function intent(DOM) {
 function model(action$, props$) {
     return props$
         .map((props) => action$
-            .map(({ rateX, rateY }) => {
+            .map(({ x,y,top, left, width, height }) => {
+                const rateX = (x - left - width*0.5)/(width*0.5);
+                const rateY = (y - top - height*0.5)/(height*0.5);
                 switch(props.mode){
                     default:
                     case ALL_DIR_STICK_MODE: return { rateX:borderRate(rateX), rateY:borderRate(rateY), mode:props.mode }
@@ -76,11 +80,11 @@ function view(state$) {
     ))
 }
 
-
-export function Stick({ DOM, props$ = xs.of({ rateX: 0, rateY: 0, mode: ALL_DIR_STICK_MODE }) }) {
-
+export function Stick({ DOM, props$ = xs.of({})}) {
+    const defaultProps$ = xs.of({ rateX: 0, rateY: 0, mode: ALL_DIR_STICK_MODE });
+    const newProps$ = xs.combine( defaultProps$, props$ ).map(([a,b]) => ({...a,...b})).debug()
     const action$ = intent(DOM);
-    const state$ = model(action$, props$);
+    const state$ = model(action$, newProps$);
     const vdom$ = view(state$);
 
     const sinks = {

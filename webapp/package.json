@@ -25,6 +25,7 @@
     "babel-brunch": "~6.0",
     "babel-preset-latest": "^6",
     "babel-plugin-transform-react-jsx": "^6.23.0",
+    "babel-plugin-transform-object-rest-spread": "^6.23.0",
     "postcss-brunch": "^2.0.5",
     "postcss-scss": "^0.4.1",
     "postcss-browser-reporter": "^0.5.0",

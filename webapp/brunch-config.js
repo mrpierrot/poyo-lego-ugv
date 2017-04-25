@@ -26,8 +26,12 @@ exports.paths = {
 exports.plugins = {
   babel: {
     presets: ['latest'], 
-    plugins: [ "syntax-jsx", ["transform-react-jsx", {"pragma": "html"}]
-  ]},
+    plugins: [ 
+      "syntax-jsx", 
+      "transform-object-rest-spread",
+      ["transform-react-jsx", {"pragma": "html"}]
+    ]
+  },
   postcss: {
     processors: [
       require("postcss-import")({
