@@ -1,7 +1,9 @@
 @import 'normalize.css';
+@import './_variables';
 
 body {
     overflow: hidden;
+    background: var(--background-color);
 }
 
 .gamestick-wrapper {

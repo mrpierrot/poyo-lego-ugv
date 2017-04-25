@@ -13,7 +13,7 @@ exports.files = {
       'app.css': /^app/
     },
     order:{
-      before:["app/styles.css"]
+      before:["app/styles/init.css"]
     }
   }
 };
@@ -30,11 +30,9 @@ exports.plugins = {
   ]},
   postcss: {
     processors: [
-      require("postcss-import")(/*{
-        plugins: [
-          require("stylelint")({configBasedir:'.' })
-        ]
-      }*/),
+      require("postcss-import")({
+        path : [__dirname]
+      }),
       // require("postcss-url")(),
       require("postcss-cssnext")(),
       require("postcss-browser-reporter")(),
