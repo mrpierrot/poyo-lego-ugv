@@ -1,13 +1,18 @@
 @import 'app/styles/_variables';
 
+:root {
+  --stick-main-color: var(--white);
+  --stick-2nd-color: var(--background-color);
+}
+
 .stick-button {
   position: absolute;
   width: 64px;
   height: 64px;
-  background-color: var(--background-color);
+  background-color: var(--stick-2nd-color);
   border-radius: 50%;
   transform: translate(-50%, -50%);
-  z-index: 0;
+  z-index: 5;
 
   &::before {
     content: "";
@@ -19,30 +24,116 @@
     bottom: 0;
     right: 0;
     border-radius: 50%;
-    z-index: -1;
-    transform: translate(4px, 4px);
+    transform: translate(0, 8px);
   }
 
   &::after {
     content: "";
     display: block;
-    background: var(--background-color);
+    background: var(--stick-main-color);
     position: absolute;
-    border: 4px solid var(--white);
     top: 0;
     left: 0;
     bottom: 0;
     right: 0;
     border-radius: 50%;
-    z-index: -1;
   }
 }
 
 .stick-base {
   width: 128px;
   height: 128px;
-  background-color: var(--background-color);
-  border: 4px solid var(--white);
+  background-color: var(--stick-2nd-color);
+  /*border: 4px solid var(--stick-main-color);*/
   border-radius: 50%;
   position: relative;
+
+  &::before {
+    content: "";
+    display: block;
+    background: rgba(0, 0, 0, 0.4);
+    position: absolute;
+    top: -4px;
+    left: -2px;
+    bottom: -4px;
+    right: -2px;
+    border-radius: 50%;
+    transform: translate(0, 6px);
+    z-index: 0;
+  }
+
+  &::after {
+    content: "";
+    display: block;
+    background-color: var(--stick-2nd-color);
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    border-radius: 50%;
+    z-index: 1;
+  }
+
+  &.horizontal .stick-decorator-1::before {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-width: 12px 12px 12px 0;
+    border-color: transparent var(--stick-main-color) transparent transparent;
+    border-style: solid;
+    top: 50%;
+    left: 8px;
+    transform: translateY(-50%);
+  }
+
+  &.horizontal .stick-decorator-1::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-width: 12px 0 12px 12px;
+    border-color: transparent transparent transparent var(--stick-main-color);
+    border-style: solid;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+  }
+
+  &.vertical .stick-decorator-2::before {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-width: 12px 12px 0 12px;
+    border-color: var(--stick-main-color) transparent transparent transparent;
+    border-style: solid;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  &.vertical .stick-decorator-2::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-width: 0 12px 12px 12px;
+    border-color: transparent transparent var(--stick-main-color) transparent;
+    border-style: solid;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
+
+.stick-decorator-1,
+.stick-decorator-2 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  z-index: 3;
 }

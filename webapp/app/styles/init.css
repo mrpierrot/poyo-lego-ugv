@@ -34,3 +34,7 @@ body {
 .camera-display {
     flex: 1 1 auto;
 }
+
+.button {
+    background: var(--background-color);
+}

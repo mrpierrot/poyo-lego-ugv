@@ -8,6 +8,14 @@ function borderRate(val){
     return val;
 }
 
+function modeToClasses(mode){
+    switch(mode){
+        case VERTICAL_STICK_MODE: return 'vertical';
+        case HORIZONTAL_STICK_MODE: return 'horizontal';
+    }
+    return 'vertical horizontal';
+}
+
 function intent(DOM) {
     const stick$ = DOM.select('.stick-base');
     const root$ = DOM.select('body');
@@ -20,7 +28,6 @@ function intent(DOM) {
         .map(touchStartEvent => {
             const { top, left, width, height } = touchStartEvent.currentTarget.getBoundingClientRect();
             const targetTouches = touchStartEvent.targetTouches;
-            //console.log('start',_.map(targetTouches,'identifier'));
             return touchMove$
                 .filter(e => 
                     _.some(e.targetTouches,
@@ -47,9 +54,9 @@ function model(action$, props$) {
             .map(({ rateX, rateY }) => {
                 switch(props.mode){
                     default:
-                    case ALL_DIR_STICK_MODE: return { rateX:borderRate(rateX), rateY:borderRate(rateY) }
-                    case VERTICAL_STICK_MODE: return { rateX:0, rateY:borderRate(rateY) }
-                    case HORIZONTAL_STICK_MODE: return { rateX:borderRate(rateX), rateY:0 }
+                    case ALL_DIR_STICK_MODE: return { rateX:borderRate(rateX), rateY:borderRate(rateY), mode:props.mode }
+                    case VERTICAL_STICK_MODE: return { rateX:0, rateY:borderRate(rateY), mode:props.mode }
+                    case HORIZONTAL_STICK_MODE: return { rateX:borderRate(rateX), rateY:0, mode:props.mode }
                 }
                 
             })
@@ -60,8 +67,10 @@ function model(action$, props$) {
 }
 
 function view(state$) {
-    return (state$.map(({ rateX, rateY }) =>
-        <div className="stick-base">
+    return (state$.map(({ rateX, rateY, mode }) =>
+        <div className={"stick-base "+modeToClasses(mode)}>
+            <div className="stick-decorator-1"></div>
+            <div className="stick-decorator-2"></div>
             <div className="stick-button" style={{ left: `calc(50% + ${rateX*50}%)`, top: `calc(50% + ${rateY*50}%)` }}></div>
         </div>
     ))
