@@ -54,13 +54,16 @@ function model(action$, props$) {
     return props$
         .map((props) => action$
             .map(({ x,y,top, left, width, height }) => {
-                const rateX = (x - left - width*0.5)/(width*0.5);
-                const rateY = (y - top - height*0.5)/(height*0.5);
+                const padding = props.padding;
+                const w = width - padding*2;
+                const h = height - padding*2;
+                const rateX = (x - left - w*0.5 - padding )/(w*0.5);
+                const rateY = (y - top - h*0.5 - padding)/(h*0.5);
                 switch(props.mode){
                     default:
-                    case ALL_DIR_STICK_MODE: return { rateX:borderRate(rateX), rateY:borderRate(rateY), mode:props.mode }
-                    case VERTICAL_STICK_MODE: return { rateX:0, rateY:borderRate(rateY), mode:props.mode }
-                    case HORIZONTAL_STICK_MODE: return { rateX:borderRate(rateX), rateY:0, mode:props.mode }
+                    case ALL_DIR_STICK_MODE: return { rateX:borderRate(rateX), rateY:borderRate(rateY), mode:props.mode, padding }
+                    case VERTICAL_STICK_MODE: return { rateX:0, rateY:borderRate(rateY), mode:props.mode, padding }
+                    case HORIZONTAL_STICK_MODE: return { rateX:borderRate(rateX), rateY:0, mode:props.mode, padding }
                 }
                 
             })
@@ -71,17 +74,17 @@ function model(action$, props$) {
 }
 
 function view(state$) {
-    return (state$.map(({ rateX, rateY, mode }) =>
+    return (state$.map(({ rateX, rateY, mode, padding }) =>
         <div className={"stick-base "+modeToClasses(mode)}>
             <div className="stick-decorator-1"></div>
             <div className="stick-decorator-2"></div>
-            <div className="stick-button" style={{ left: `calc(50% + ${rateX*50}%)`, top: `calc(50% + ${rateY*50}%)` }}></div>
+            <div className="stick-button" style={{ left: `calc(50% + ${rateX} * (50% - ${padding}px))`, top: `calc(50% + ${rateY} * (50% - ${padding}px))` }}></div>
         </div>
     ))
 }
 
 export function Stick({ DOM, props$ = xs.of({})}) {
-    const defaultProps$ = xs.of({ rateX: 0, rateY: 0, mode: ALL_DIR_STICK_MODE });
+    const defaultProps$ = xs.of({ rateX: 0, rateY: 0, mode: ALL_DIR_STICK_MODE,padding: 16 });
     const newProps$ = xs.combine( defaultProps$, props$ ).map(([a,b]) => ({...a,...b})).debug()
     const action$ = intent(DOM);
     const state$ = model(action$, newProps$);
