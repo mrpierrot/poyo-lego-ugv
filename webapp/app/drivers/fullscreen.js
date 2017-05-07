@@ -44,6 +44,7 @@ export function makeFullscreenDriver() {
                 switch(action){
                     case 'request': return request(element);
                     case 'cancel': return cancel();
+                    case 'toggle':
                     default: isFullscreenMode()?request(element):cancel();
 
                 }

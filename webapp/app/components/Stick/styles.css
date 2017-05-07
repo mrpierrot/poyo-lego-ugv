@@ -19,10 +19,10 @@
     display: block;
     background: rgba(0, 0, 0, 0.4);
     position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
+    top: -2px;
+    left: -1px;
+    bottom: -2px;
+    right: -1px;
     border-radius: 50%;
     transform: translate(0, 8px);
   }
@@ -43,8 +43,6 @@
 .stick-base {
   width: 128px;
   height: 128px;
-  background-color: var(--stick-2nd-color);
-  border-radius: 50%;
   position: relative;
 
   &::before {

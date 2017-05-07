@@ -85,7 +85,7 @@ function view(state$) {
 
 export function Stick({ DOM, props$ = xs.of({})}) {
     const defaultProps$ = xs.of({ rateX: 0, rateY: 0, mode: ALL_DIR_STICK_MODE,padding: 16 });
-    const newProps$ = xs.combine( defaultProps$, props$ ).map(([a,b]) => ({...a,...b})).debug()
+    const newProps$ = xs.combine( defaultProps$, props$ ).map(([a,b]) => ({...a,...b}));
     const action$ = intent(DOM);
     const state$ = model(action$, newProps$);
     const vdom$ = view(state$);

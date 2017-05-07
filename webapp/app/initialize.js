@@ -20,23 +20,38 @@ import { makeFullscreenDriver } from 'drivers/fullscreen';
 function main(sources) {
 
   const { DOM, socketIO, fullscreen } = sources;
-  const start$ = DOM.select('.action-start').events('click');
-  const stop$ = DOM.select('.action-stop').events('click');
+  const startAction$ = DOM.select('.action-start').events('click');
+  const stopAction$ = DOM.select('.action-stop').events('click');
   const incomingMessages$ = socketIO.get('ping').startWith('none');
-  const startMessages$ = start$.map(eventData => ({
+  const fullscreenAction$ = DOM.select('.action-fullscreen').events('click');
+  
+  const leftStick = isolate(Stick, { DOM: 'left-stick' })({ DOM, props$: xs.of({ mode: HORIZONTAL_STICK_MODE }) });
+  const rightStick = isolate(Stick, { DOM: 'right-stick' })({ DOM, props$: xs.of({ mode: VERTICAL_STICK_MODE }) });
+
+
+  const fullscreen$ = fullscreenAction$.map(()=> ({
+    action: 'toggle'
+  }));
+
+  const startMessages$ = startAction$.map(eventData => ({
     messageType: 'start',
     message: eventData,
   }));
 
-  const fullscreen$ = DOM.select('.action-fullscreen').events('click');
-
-  const stopMessages$ = stop$.map(eventData => ({
+  const stopMessages$ = stopAction$.map(eventData => ({
     messageType: 'stop',
     message: eventData,
   }));
 
-  const leftStick = isolate(Stick, { DOM: 'left-stick' })({ DOM, props$: xs.of({ mode: HORIZONTAL_STICK_MODE }) });
-  const rightStick = isolate(Stick, { DOM: 'right-stick' })({ DOM, props$: xs.of({ mode: VERTICAL_STICK_MODE }) });
+  const directionMessage$ = leftStick.value.map((data) => ({
+    messageType: 'direction',
+    message: {value:data.rateX},
+  }));
+
+  const speedMessage$ = rightStick.value.map( data => ({
+    messageType: 'speed',
+    message: {value:data.rateY},
+  }));
 
   const sinks = {
     DOM: xs.combine(leftStick.DOM, rightStick.DOM)
@@ -54,7 +69,7 @@ function main(sources) {
           </div>
         </div>
       ),
-    socketIO: xs.merge(startMessages$, stopMessages$),
+    socketIO: xs.merge(directionMessage$,speedMessage$,startMessages$, stopMessages$),
     fullscreen: fullscreen$
   };
   return sinks;
