@@ -1,6 +1,7 @@
 const express = require('express');
 const ev3dev = require('ev3dev-lang');
 const fs = require('fs');
+const { makeController } = require('./app/controller');
 
 const options = {
     key: fs.readFileSync(__dirname+'/certs/key.pem'),
@@ -13,7 +14,6 @@ exports.startServer = (port, path, callback) => {
     const https = require('http').createServer(app);
     const io = require('socket.io')(https);
     const publicPath = __dirname + '/' + path;
-
    
     app.use(express.static(publicPath));
 
@@ -21,6 +21,12 @@ exports.startServer = (port, path, callback) => {
         res.sendFile(publicPath + '/index.html');
     });
 
+    https.listen(port, callback);
+
+    makeController(io);
+
+
+/*
     const motor = new ev3dev.Motor('spi0.1:MA');
 
     io.on('connection', (socket) => {
@@ -47,11 +53,17 @@ exports.startServer = (port, path, callback) => {
                 console.log('motor not connected');
             }
         });
+        socket.on('speed', (data) => {
+            console.log('speed',data);
+        });
+        socket.on('direction', (data) => {
+            console.log('direction',data);
+        });
         socket.on('disconnect', () => {
             console.log('user disconnected');
         });
     });
-
-    https.listen(port, callback);
+*/
+   
 };
 
