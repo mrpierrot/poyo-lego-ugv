@@ -54,13 +54,14 @@ function main(sources) {
   }));
 
   const sinks = {
-    DOM: xs.combine(leftStick.DOM, rightStick.DOM)
-      .map(([leftStickDOM, rightStickDOM]) =>
+    DOM: xs.combine(leftStick.DOM, rightStick.DOM,incomingMessages$)
+      .map(([leftStickDOM, rightStickDOM,msg]) =>
         <div className="gamestick-wrapper">
           <header className="gamestick-header">
             <button className="action-start button">Start</button>
             <button className="action-stop button">Stop</button>
             <button className="action-fullscreen button">Fullscreen</button>
+            {msg}
           </header>
           <div className="gamestick">
             {leftStickDOM}

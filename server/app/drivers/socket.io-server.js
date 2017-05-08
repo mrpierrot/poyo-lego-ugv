@@ -2,29 +2,28 @@ const xs = require('xstream').default;
 const {adapt} = require('@cycle/run/lib/adapt');
 
 
-function SocketWrapper(socket, events$) {
+function createEventSocketProducer(socket,eventName){
+    let eventListener = null;
+    return {
+        start(listener) {
+            eventListener = (data) => {
+                listener.next({ name: eventName, data });
+            }
 
-    events$.addListener({
-        next: outgoing => {
-            console.log(outgoing);
+            socket.on(eventName, eventListener);
         },
-        error: () => { },
-        complete: () => { },
-    });
+        stop() {
+            socket.removeListener(eventName,eventListener)
+        }
+    }
+}
+
+function SocketWrapper(socket) {
 
     return {
-        get(eventName) {
-            return adapt(xs.create({
-                start(listener) {
-                    socket.on(eventName, (data) => {
-                        listener.next({ name: eventName, data });
-                    });
-                },
-
-                stop() {
-
-                }
-            }))
+        _original: socket,
+        events(eventName) {
+            return adapt(xs.create(createEventSocketProducer(socket,eventName)))
         }
     }
 }
@@ -33,13 +32,21 @@ exports.makeSocketIOServerDriver = function makeSocketIOServerDriver(io) {
 
     return function socketIOServerDriver(events$) {
 
+        events$.addListener({
+            next: outgoing => {
+                outgoing.socket._original.emit(outgoing.type,outgoing.data);
+            },
+            error: () => { },
+            complete: () => { },
+        });
+
         function connect() {
 
             return adapt(xs.create({
                 start(listener) {
                     io.on('connection', (socket) => {
 
-                        listener.next(SocketWrapper(socket, events$));
+                        listener.next(SocketWrapper(socket));
                     });
                 },
 
@@ -50,9 +57,8 @@ exports.makeSocketIOServerDriver = function makeSocketIOServerDriver(io) {
 
         }
 
-
         return {
-            connect: connect
+            connect
         }
 
     }

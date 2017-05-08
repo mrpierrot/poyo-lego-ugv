@@ -10,16 +10,26 @@ exports.makeController = function makeController(io){
         const { socketServer } = sources;
         const connection$ = socketServer.connect();
         
-        const ev3devActions$ = connection$.map( socket$ => {
-            const disconnection$ = socket$.get('disconnect');
+        const ev3devActions$ = connection$.map( socket => {
+            const disconnection$ = socket.events('disconnect');
             return xs.merge(
-                socket$.get('speed'),
-                socket$.get('direction')
+                socket.events('speed'),
+                socket.events('direction')
             ).endWhen(disconnection$);
-        }).flatten()
+        }).flatten();
+
+       const ping$ = xs.combine(xs.periodic(1000),connection$).map(
+            ([timer,socket]) => {
+                return {
+                    socket:socket,
+                    type:'ping',
+                    data: 'pong'
+                }
+            }
+        );
         
         const sinks = {
-            socketServer: xs.merge(),
+            socketServer: ping$,
             ev3dev: ev3devActions$.debug()
         };
         return sinks;
