@@ -1,6 +1,6 @@
 const xs = require('xstream').default,
     { run } = require('@cycle/run'),
-    { makeSocketIOServerDriver } = require('./drivers/socket.io-server'),
+    { makeSocketIOServerDriver } = require('cycle-socket.io-server'),
     { makeEv3devDriver } = require('./drivers/ev3dev');
 
 exports.makeController = function makeController(io){
@@ -22,7 +22,7 @@ exports.makeController = function makeController(io){
             ([timer,socket]) => {
                 return {
                     socket:socket,
-                    type:'ping',
+                    name:'ping',
                     data: 'pong'
                 }
             }
