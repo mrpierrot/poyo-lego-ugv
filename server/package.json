@@ -12,6 +12,7 @@
   "dependencies": {
     "@cycle/run": "^3.0.0",
     "cycle-ev3dev": "0.0.2",
+    "cycle-socket.io-server": "0.0.3",
     "express": "^4.15.2",
     "nodemon": "^1.11.0",
     "socket.io": "^1.7.3",
