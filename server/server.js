@@ -24,46 +24,5 @@ exports.startServer = (port, path, callback) => {
     https.listen(port, callback);
 
     makeController(io);
-
-
-/*
-    const motor = new ev3dev.Motor('spi0.1:MA');
-
-    io.on('connection', (socket) => {
-        console.log('a user connected');
-        socket.emit('connected');
-        setInterval(() => {
-            socket.emit('ping', 'pong');
-        }, 1000);
-        socket.on('start', () => {
-            console.log('start');
-            if (motor.connected) {
-                console.log('motor connected');
-                motor.runForever();
-            }else{
-                console.log('motor not connected');
-            }
-        });
-        socket.on('stop', () => {
-            console.log('stop');
-            if (motor.connected) {
-                console.log('motor connected');
-                motor.stop();
-            }else{
-                console.log('motor not connected');
-            }
-        });
-        socket.on('speed', (data) => {
-            console.log('speed',data);
-        });
-        socket.on('direction', (data) => {
-            console.log('direction',data);
-        });
-        socket.on('disconnect', () => {
-            console.log('user disconnected');
-        });
-    });
-*/
-   
 };
 

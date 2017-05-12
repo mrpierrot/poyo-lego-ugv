@@ -1,7 +1,7 @@
 const xs = require('xstream').default,
     { run } = require('@cycle/run'),
     { makeSocketIOServerDriver } = require('cycle-socket.io-server'),
-    { makeEv3devDriver } = require('./drivers/ev3dev');
+    { makeEv3devDriver } = require('cycle-ev3dev');
 
 exports.makeController = function makeController(io){
 
@@ -17,20 +17,10 @@ exports.makeController = function makeController(io){
                 socket.events('direction')
             ).endWhen(disconnection$);
         }).flatten();
-
-       const ping$ = xs.combine(xs.periodic(1000),connection$).map(
-            ([timer,socket]) => {
-                return {
-                    socket:socket,
-                    name:'ping',
-                    data: 'pong'
-                }
-            }
-        );
         
         const sinks = {
-            socketServer: ping$,
-            ev3dev: ev3devActions$.debug()
+           /* socketServer: ping$,
+            ev3dev: ev3devActions$.debug()*/
         };
         return sinks;
     }
