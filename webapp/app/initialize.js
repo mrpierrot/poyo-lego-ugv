@@ -22,8 +22,8 @@ function main(sources) {
   const { DOM, socketIO, fullscreen } = sources;
   const startAction$ = DOM.select('.action-start').events('click');
   const stopAction$ = DOM.select('.action-stop').events('click');
-  const incomingMessages$ = socketIO.get('ping').startWith('none');
   const fullscreenAction$ = DOM.select('.action-fullscreen').events('click');
+  const fullscreenChange$ = fullscreen.change();
   
   const leftStick = isolate(Stick, { DOM: 'left-stick' })({ DOM, props$: xs.of({ mode: HORIZONTAL_STICK_MODE }) });
   const rightStick = isolate(Stick, { DOM: 'right-stick' })({ DOM, props$: xs.of({ mode: VERTICAL_STICK_MODE }) });
@@ -54,14 +54,14 @@ function main(sources) {
   }));
 
   const sinks = {
-    DOM: xs.combine(leftStick.DOM, rightStick.DOM,incomingMessages$)
-      .map(([leftStickDOM, rightStickDOM,msg]) =>
+    DOM: xs.combine(leftStick.DOM, rightStick.DOM,fullscreenChange$)
+      .map(([leftStickDOM, rightStickDOM,fsChange]) =>
         <div className="gamestick-wrapper">
           <header className="gamestick-header">
             <button className="action-start button">Start</button>
             <button className="action-stop button">Stop</button>
             <button className="action-fullscreen button">Fullscreen</button>
-            {msg}
+            {fsChange.enabled}
           </header>
           <div className="gamestick">
             {leftStickDOM}
