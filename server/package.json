@@ -16,6 +16,10 @@
     "express": "^4.15.2",
     "nodemon": "^1.11.0",
     "socket.io": "^1.7.3",
-    "xstream": "^10.7.0"
+    "xstream": "^10.7.0",
+    "fluent-ffmpeg": "^2.1.2"
+  },
+  "devDependencies": {
+
   }
 }

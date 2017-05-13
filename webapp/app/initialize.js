@@ -7,6 +7,7 @@ import io from 'socket.io-client';
 import { html } from 'snabbdom-jsx';
 import { Stick, VERTICAL_STICK_MODE, HORIZONTAL_STICK_MODE } from 'components/Stick';
 import { makeFullscreenDriver } from 'drivers/fullscreen';
+import { makeJSMpegDriver } from 'drivers/jsmpeg';
 
 // Register the service worker if available.
 /*if ('serviceWorker' in navigator) {
@@ -19,11 +20,12 @@ import { makeFullscreenDriver } from 'drivers/fullscreen';
 
 function main(sources) {
 
-  const { DOM, socketIO, fullscreen } = sources;
+  const { DOM, socketIO, fullscreen, jsmpeg } = sources;
   const startAction$ = DOM.select('.action-start').events('click');
   const stopAction$ = DOM.select('.action-stop').events('click');
   const fullscreenAction$ = DOM.select('.action-fullscreen').events('click');
   const fullscreenChange$ = fullscreen.change();
+  const camData$ = socketIO.get('cam:data');
   
   const leftStick = isolate(Stick, { DOM: 'left-stick' })({ DOM, props$: xs.of({ mode: HORIZONTAL_STICK_MODE }) });
   const rightStick = isolate(Stick, { DOM: 'right-stick' })({ DOM, props$: xs.of({ mode: VERTICAL_STICK_MODE }) });
@@ -34,12 +36,12 @@ function main(sources) {
   }));
 
   const startMessages$ = startAction$.map(eventData => ({
-    messageType: 'start',
+    messageType: 'cam:start',
     message: eventData,
   }));
 
   const stopMessages$ = stopAction$.map(eventData => ({
-    messageType: 'stop',
+    messageType: 'cam:stop',
     message: eventData,
   }));
 
@@ -71,7 +73,8 @@ function main(sources) {
         </div>
       ),
     socketIO: xs.merge(directionMessage$,speedMessage$,startMessages$, stopMessages$),
-    fullscreen: fullscreen$
+    fullscreen: fullscreen$,
+    jsmpeg: camData$
   };
   return sinks;
 }
@@ -79,7 +82,8 @@ function main(sources) {
 const drivers = {
   DOM: makeDOMDriver('#app'),
   socketIO: makeSocketIODriver(io()),
-  fullscreen: makeFullscreenDriver()
+  fullscreen: makeFullscreenDriver(),
+  jsmpeg:makeJSMpegDriver()
 };
 
 run(main, drivers);
