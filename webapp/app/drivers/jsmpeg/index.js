@@ -9,11 +9,11 @@ export function makeJSMpegDriver() {
 
     return function jsmpegDriver(events$) {
 
-        return () => {
+        return (containerClassName="camera-display") => {
             const player = new window.JSMpeg.Player(null, {source:createXstreamSource(events$),disableGl:false});
             return xs.of({
                 player,
-                DOM: <div className="camera-canvas" hook={{insert:vnode => { vnode.elm.appendChild(player.renderer.canvas)}}}></div>
+                DOM: <div className={containerClassName} hook={{insert:vnode => { vnode.elm.appendChild(player.renderer.canvas)}}}></div>
             });
         }
     }

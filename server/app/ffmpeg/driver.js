@@ -1,20 +1,22 @@
 const xs = require('xstream').default;
 
-function createStreamProducer(command) {
+function createStreamProducer(commandMaker) {
 
     let dataListener = null,
         errorListener = null,
         endListener = null;
     let ffstream = null;
 
-    command.on('error',() => {
-        console.log('ffmpeg : off')
-    });
+    let command;
     return {
         start(listener){
             dataListener = (o) => listener.next(o);
             errorListener = (o) => listener.error(o);
             endListener = (o) => listener.complete(o);
+            command = commandMaker()
+            command.on('error',() => {
+                console.log('ffmpeg : off')
+            });
             ffstream = command.pipe();
             ffstream.on('data',dataListener);
             ffstream.on('error',errorListener);
@@ -28,6 +30,7 @@ function createStreamProducer(command) {
             ffstream.removeListener('error',errorListener);
             ffstream.removeListener('end',endListener);
             ffstream.removeListener('close',endListener);
+            command = null;
            
         }
     }

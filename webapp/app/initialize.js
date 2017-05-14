@@ -68,9 +68,7 @@ function main(sources) {
           </header>
           <div className="gamestick">
             {leftStickDOM}
-            <div className="camera-display">
-              {videoPlayer.DOM}
-            </div>
+            {videoPlayer.DOM}
             {rightStickDOM}
           </div>
         </div>

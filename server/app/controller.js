@@ -25,7 +25,7 @@ exports.makeController = function makeController(io){
 
             const camStop$ = socket.events('cam:stop');
             const camStart$ = socket.events('cam:start')
-                .mapTo(ffmpeg.stream(createMacOSCamCommand()).endWhen(camStop$))
+                .mapTo(ffmpeg.stream(createMacOSCamCommand).endWhen(camStop$))
                 .flatten()
                 .map((data) => ({
                     socket,
