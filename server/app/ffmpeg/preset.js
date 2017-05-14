@@ -7,7 +7,7 @@ exports.createMacOSCamCommand = function createMacOSCamCommand() {
         .outputOptions([
             '-f mpegts',
             '-codec:v mpeg1video',
-            '-s 640x480',
+            '-s 320x180',
             '-b:v 1000k',
             '-bf 0'
         ])

@@ -25,7 +25,8 @@ function main(sources) {
   const stopAction$ = DOM.select('.action-stop').events('click');
   const fullscreenAction$ = DOM.select('.action-fullscreen').events('click');
   const fullscreenChange$ = fullscreen.change();
-  const camData$ = socketIO.get('cam:data');
+  const cameraData$ = socketIO.get('cam:data');
+  const videoPlayer$ = jsmpeg();
   
   const leftStick = isolate(Stick, { DOM: 'left-stick' })({ DOM, props$: xs.of({ mode: HORIZONTAL_STICK_MODE }) });
   const rightStick = isolate(Stick, { DOM: 'right-stick' })({ DOM, props$: xs.of({ mode: VERTICAL_STICK_MODE }) });
@@ -56,8 +57,8 @@ function main(sources) {
   }));
 
   const sinks = {
-    DOM: xs.combine(leftStick.DOM, rightStick.DOM,fullscreenChange$)
-      .map(([leftStickDOM, rightStickDOM,fsChange]) =>
+    DOM: xs.combine(leftStick.DOM, rightStick.DOM,fullscreenChange$,videoPlayer$)
+      .map(([leftStickDOM, rightStickDOM,fsChange,videoPlayer]) =>
         <div className="gamestick-wrapper">
           <header className="gamestick-header">
             <button className="action-start button">Start</button>
@@ -67,14 +68,16 @@ function main(sources) {
           </header>
           <div className="gamestick">
             {leftStickDOM}
-            <div className="camera-display"></div>
+            <div className="camera-display">
+              {videoPlayer.DOM}
+            </div>
             {rightStickDOM}
           </div>
         </div>
       ),
     socketIO: xs.merge(directionMessage$,speedMessage$,startMessages$, stopMessages$),
     fullscreen: fullscreen$,
-    jsmpeg: camData$
+    jsmpeg: cameraData$
   };
   return sinks;
 }
