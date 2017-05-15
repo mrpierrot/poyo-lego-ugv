@@ -21,51 +21,53 @@ import { makeJSMpegDriver } from 'drivers/jsmpeg';
 function main(sources) {
 
   const { DOM, socketIO, fullscreen, jsmpeg } = sources;
-  const startAction$ = DOM.select('.action-start').events('click');
-  const stopAction$ = DOM.select('.action-stop').events('click');
-  const fullscreenAction$ = DOM.select('.action-fullscreen').events('click');
+  const cameraPowerToggleAction$ = DOM.select('.action-camera-power-toggle').events('change').map(e => e.target.checked);
+  const fullscreenToggleAction$ = DOM.select('.action-fullscreen-toggle').events('change').map(e => e.target.checked);
   const fullscreenChange$ = fullscreen.change();
   const cameraData$ = socketIO.get('camera:data');
   const cameraState$ = socketIO.get('camera:state');
   const videoPlayer$ = jsmpeg();
-  
+
   const leftStick = isolate(Stick, { DOM: 'left-stick' })({ DOM, props$: xs.of({ mode: HORIZONTAL_STICK_MODE }) });
   const rightStick = isolate(Stick, { DOM: 'right-stick' })({ DOM, props$: xs.of({ mode: VERTICAL_STICK_MODE }) });
 
 
-  const fullscreen$ = fullscreenAction$.map(()=> ({
+  const fullscreen$ = fullscreenToggleAction$.map(() => ({
     action: 'toggle'
   }));
 
-  const startMessages$ = startAction$.map(eventData => ({
-    messageType: 'camera:start',
-    message: eventData,
-  }));
-
-  const stopMessages$ = stopAction$.map(eventData => ({
-    messageType: 'camera:stop',
-    message: eventData,
-  }));
+  const cameraPowerToggle$ = cameraPowerToggleAction$.map(
+    checked => checked ?
+      {
+        messageType: 'camera:start'
+      } :
+      {
+        messageType: 'camera:stop'
+      });
 
   const directionMessage$ = leftStick.value.map((data) => ({
     messageType: 'direction',
-    message: {value:data.rateX},
+    message: { value: data.rateX },
   }));
 
-  const speedMessage$ = rightStick.value.map( data => ({
+  const speedMessage$ = rightStick.value.map(data => ({
     messageType: 'speed',
-    message: {value:data.rateY},
+    message: { value: data.rateY },
   }));
 
   const sinks = {
-    DOM: xs.combine(leftStick.DOM, rightStick.DOM,fullscreenChange$,videoPlayer$,cameraState$)
-      .map(([leftStickDOM, rightStickDOM,fsChange,videoPlayer,cameraState]) =>
+    DOM: xs.combine(leftStick.DOM, rightStick.DOM, fullscreenChange$, videoPlayer$, cameraState$)
+      .map(([leftStickDOM, rightStickDOM, fsChange, videoPlayer, cameraState]) =>
         <div className="gamestick-wrapper">
           <header className="gamestick-header">
-            <button className="action-start button">Start</button>
-            <button className="action-stop button">Stop</button>
-            <button className="action-fullscreen button">Fullscreen</button>
-            {fsChange.enabled}<br/>
+            <div className="checkbox">
+              <input id="action-camera-power-toggle" type="checkbox" className="action-camera-power-toggle" checked={cameraState == "streaming"} />
+              <label htmlFor="action-camera-power-toggle">Camera</label>
+            </div>
+            <div className="checkbox">
+              <input id="action-fullscreen-toggle" type="checkbox" className="action-fullscreen-toggle" checked={fsChange.enabled} />
+              <label htmlFor="action-fullscreen-toggle">Fullscreen</label>
+            </div>
             {cameraState}
           </header>
           <div className="gamestick">
@@ -75,7 +77,7 @@ function main(sources) {
           </div>
         </div>
       ),
-    socketIO: xs.merge(directionMessage$,speedMessage$,startMessages$, stopMessages$),
+    socketIO: xs.merge(directionMessage$, speedMessage$, cameraPowerToggle$),
     fullscreen: fullscreen$,
     jsmpeg: cameraData$
   };
@@ -86,7 +88,7 @@ const drivers = {
   DOM: makeDOMDriver('#app'),
   socketIO: makeSocketIODriver(io()),
   fullscreen: makeFullscreenDriver(),
-  jsmpeg:makeJSMpegDriver()
+  jsmpeg: makeJSMpegDriver()
 };
 
 run(main, drivers);
