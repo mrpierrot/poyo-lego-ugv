@@ -33,7 +33,7 @@ exports.makeController = function makeController(io){
                 xs.of({socket,name:'camera:state',data:'stopped'}),
                 cameraStart$.mapTo({socket,name:'camera:state',data:'streaming'}),
                 cameraStop$.mapTo({socket,name:'camera:state',data:'stopped'}),
-                cameraStart$.map(() => xs.from(camera$).endWhen(cameraStop$))
+                cameraStart$.map(() => camera$.endWhen(cameraStop$))
                     .flatten()
                     .map((data) => ({
                         socket,
