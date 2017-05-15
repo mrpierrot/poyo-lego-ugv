@@ -1,9 +1,11 @@
 const xs = require('xstream').default,
+    flattenConcurrently = require('xstream/extra/flattenConcurrently').default,
     { run } = require('@cycle/run'),
     { makeSocketIOServerDriver } = require('cycle-socket.io-server'),
     { makeEv3devDriver } = require('cycle-ev3dev'),
     { makeFfmpegDriver } = require('./ffmpeg/driver'),
-    { createMacOSCamCommand } = require('./ffmpeg/preset');
+    { createMacOSCameraCommand,createRaspicamCommand } = require('./ffmpeg/preset');
+
 
 exports.makeController = function makeController(io){
 
@@ -11,6 +13,7 @@ exports.makeController = function makeController(io){
 
         const { socketServer, ffmpeg } = sources;
         const connection$ = socketServer.connect();
+        const camera$ = ffmpeg.stream();
         
         const ev3devActions$ = connection$.map( socket => {
             const disconnection$ = socket.events('disconnect');
@@ -20,24 +23,29 @@ exports.makeController = function makeController(io){
             ).endWhen(disconnection$);
         }).flatten();
 
-        const camActions$ = connection$.map( socket => {
+        const cameraActions$ = connection$.map( socket => {
             const disconnection$ = socket.events('disconnect');
+            const cameraStop$ = socket.events('camera:stop').endWhen(disconnection$);
+            const cameraStart$ = socket.events('camera:start').endWhen(disconnection$);
+            const cameraControle$ = xs.merge(cameraStart$,cameraStop$).remember();
 
-            const camStop$ = socket.events('cam:stop');
-            const camStart$ = socket.events('cam:start')
-                .mapTo(ffmpeg.stream(createMacOSCamCommand).endWhen(camStop$))
-                .flatten()
-                .map((data) => ({
-                    socket,
-                    name:'cam:data',
-                    data
-                }))
-                .endWhen(disconnection$);
-            return camStart$
-        }).flatten();
-        
+            return xs.merge(
+                xs.of({socket,name:'camera:state',data:'stopped'}),
+                cameraStart$.mapTo({socket,name:'camera:state',data:'streaming'}),
+                cameraStop$.mapTo({socket,name:'camera:state',data:'stopped'}),
+                cameraStart$.map(() => xs.from(camera$).endWhen(cameraStop$))
+                    .flatten()
+                    .map((data) => ({
+                        socket,
+                        name:'camera:data',
+                        data
+                    }))
+                );
+        })
+        .compose(flattenConcurrently);
+
         const sinks = {
-            socketServer: camActions$,
+            socketServer: cameraActions$,
             /*ev3dev: ev3devActions$.debug()*/
         };
         return sinks;
@@ -46,7 +54,8 @@ exports.makeController = function makeController(io){
     const drivers = {
         socketServer:makeSocketIOServerDriver(io),
         ev3dev:makeEv3devDriver(),
-        ffmpeg:makeFfmpegDriver()
+        ffmpeg:makeFfmpegDriver(createMacOSCameraCommand)
+        //ffmpeg:makeFfmpegDriver(createRaspicamCommand)
     };
 
     run(main, drivers);

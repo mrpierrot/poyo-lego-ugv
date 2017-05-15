@@ -10,12 +10,13 @@ function createStreamProducer(commandMaker) {
     let command;
     return {
         start(listener){
+            console.log('ffmpeg:start');
             dataListener = (o) => listener.next(o);
             errorListener = (o) => listener.error(o);
             endListener = (o) => listener.complete(o);
             command = commandMaker()
-            command.on('error',() => {
-                console.log('ffmpeg : off')
+            command.on('error',(e) => {
+                console.log('ffmpeg : off',e)
             });
             ffstream = command.pipe();
             ffstream.on('data',dataListener);
@@ -25,6 +26,7 @@ function createStreamProducer(commandMaker) {
         },
 
         stop(){
+            console.log('ffmpeg:stop');
             command.kill();
             ffstream.removeListener('data',dataListener);
             ffstream.removeListener('error',errorListener);
@@ -36,7 +38,7 @@ function createStreamProducer(commandMaker) {
     }
 }
 
-exports.makeFfmpegDriver = function makeFfmpegDriver(){
+exports.makeFfmpegDriver = function makeFfmpegDriver(commandMaker){
 
     return function ffmpegDriver(actions$){
 
@@ -53,8 +55,8 @@ exports.makeFfmpegDriver = function makeFfmpegDriver(){
         });
 
         return {
-            stream(command) {
-                return xs.create(createStreamProducer(command));
+            stream() {
+                return xs.create(createStreamProducer(commandMaker));
             }
         }
     }

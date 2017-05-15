@@ -25,7 +25,8 @@ function main(sources) {
   const stopAction$ = DOM.select('.action-stop').events('click');
   const fullscreenAction$ = DOM.select('.action-fullscreen').events('click');
   const fullscreenChange$ = fullscreen.change();
-  const cameraData$ = socketIO.get('cam:data');
+  const cameraData$ = socketIO.get('camera:data');
+  const cameraState$ = socketIO.get('camera:state');
   const videoPlayer$ = jsmpeg();
   
   const leftStick = isolate(Stick, { DOM: 'left-stick' })({ DOM, props$: xs.of({ mode: HORIZONTAL_STICK_MODE }) });
@@ -37,12 +38,12 @@ function main(sources) {
   }));
 
   const startMessages$ = startAction$.map(eventData => ({
-    messageType: 'cam:start',
+    messageType: 'camera:start',
     message: eventData,
   }));
 
   const stopMessages$ = stopAction$.map(eventData => ({
-    messageType: 'cam:stop',
+    messageType: 'camera:stop',
     message: eventData,
   }));
 
@@ -57,14 +58,15 @@ function main(sources) {
   }));
 
   const sinks = {
-    DOM: xs.combine(leftStick.DOM, rightStick.DOM,fullscreenChange$,videoPlayer$)
-      .map(([leftStickDOM, rightStickDOM,fsChange,videoPlayer]) =>
+    DOM: xs.combine(leftStick.DOM, rightStick.DOM,fullscreenChange$,videoPlayer$,cameraState$)
+      .map(([leftStickDOM, rightStickDOM,fsChange,videoPlayer,cameraState]) =>
         <div className="gamestick-wrapper">
           <header className="gamestick-header">
             <button className="action-start button">Start</button>
             <button className="action-stop button">Stop</button>
             <button className="action-fullscreen button">Fullscreen</button>
-            {fsChange.enabled}
+            {fsChange.enabled}<br/>
+            {cameraState}
           </header>
           <div className="gamestick">
             {leftStickDOM}
