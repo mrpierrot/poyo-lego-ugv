@@ -1,19 +1,29 @@
 import xs from 'xstream';
+import tween from 'xstream/extra/tween';
 import { html } from 'snabbdom-jsx';
 import _ from 'lodash';
 
-function borderRate(val){
-    if(val < -1) return -1;
-    if(val > 1) return 1;
+function borderRate(val) {
+    if (val < -1) return -1;
+    if (val > 1) return 1;
     return val;
 }
 
-function modeToClasses(mode){
-    switch(mode){
+function modeToClasses(mode) {
+    switch (mode) {
         case VERTICAL_STICK_MODE: return 'vertical';
         case HORIZONTAL_STICK_MODE: return 'horizontal';
     }
     return 'vertical horizontal';
+}
+
+function getTargetTouch(targetTouches, e) {
+    const result = _.find(e.changedTouches, (o) => _.some(targetTouches, a => a.identifier == o.identifier));
+    return result?result:false;
+}
+
+function isSameTouchAction(targetTouches, e) {
+    return _.some(e.changedTouches, (o) => _.some(targetTouches, a => a.identifier == o.identifier));
 }
 
 function intent(DOM) {
@@ -21,31 +31,54 @@ function intent(DOM) {
     const root$ = DOM.select('body');
     const touchStart$ = stick$.events('touchstart');
     const touchEnd$ = root$.events('touchend');
-    const touchcancel$ = root$.events('touchcancel');
+    const touchCancel$ = root$.events('touchcancel');
     const touchMove$ = root$.events('touchmove');
 
     return touchStart$
         .map(touchStartEvent => {
             const { top, left, width, height } = touchStartEvent.currentTarget.getBoundingClientRect();
             const targetTouches = touchStartEvent.targetTouches;
-            return touchMove$
-                .filter(e => 
-                    _.some(e.targetTouches,
-                        (o) =>  _.some(targetTouches,a => a.identifier == o.identifier) 
-                    )
-                )
+            const endAction$ = xs.merge(touchEnd$, touchCancel$)
+                                .map(e => getTargetTouch(targetTouches, e))
+                                .filter(touch => touch);
+            const moveAction$ = touchMove$
+                .filter(e => isSameTouchAction(targetTouches, e))
                 .map(e => {
-                    return { 
-                        x:e.targetTouches[0].clientX,
-                        y:e.targetTouches[0].clientY,
-                        top, left, width, height 
+                    return {
+                        x: e.targetTouches[0].clientX,
+                        y: e.targetTouches[0].clientY,
+                        top, left, width, height
                     }
                 })
-                .endWhen(xs.merge(touchEnd$,touchcancel$).filter(e => 
-                    _.some(e.changedTouches,
-                        (o) =>  _.some(targetTouches,a => a.identifier == o.identifier)
-                    )
-                ))
+                .endWhen(endAction$);
+
+            const repositionneAction$ = endAction$.take(1).map((touch) => {
+                const duration = 500;
+                const tweenX = tween({
+                    from: touch.clientX,
+                    to: left + width * 0.5,
+                    ease: tween.power2.easeInOut,
+                    duration
+                });
+
+                const tweenY = tween({
+                    from: touch.clientY,
+                    to: top + height * 0.5,
+                    ease: tween.power2.easeInOut,
+                    duration
+                })
+
+                return xs.combine(tweenX, tweenY)
+                    .map(([x, y]) => ({
+                        x, y, top, left, width, height
+                    }));
+            })
+            .flatten();
+           
+            return xs.merge(
+                moveAction$,
+                repositionneAction$
+            );
         })
         .flatten();
 }
