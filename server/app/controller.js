@@ -21,13 +21,12 @@ exports.makeController = function makeController(io){
                 socket.events('speed'),
                 socket.events('direction')
             ).endWhen(disconnection$);
-        }).flatten();
+        }).compose(flattenConcurrently);
 
         const cameraActions$ = connection$.map( socket => {
             const disconnection$ = socket.events('disconnect');
             const cameraStop$ = socket.events('camera:stop').endWhen(disconnection$);
             const cameraStart$ = socket.events('camera:start').endWhen(disconnection$);
-            const cameraControle$ = xs.merge(cameraStart$,cameraStop$).remember();
 
             return xs.merge(
                 xs.of({socket,name:'camera:state',data:'stopped'}),
@@ -41,8 +40,7 @@ exports.makeController = function makeController(io){
                         data
                     }))
                 );
-        })
-        .compose(flattenConcurrently);
+        }).compose(flattenConcurrently);
 
         const sinks = {
             socketServer: cameraActions$,
