@@ -44,12 +44,13 @@ function intent(DOM) {
                 .map(e => getTargetTouch(targetTouches, e))
                 .filter(touch => touch);
             const moveAction$ = touchMove$
-                .filter(e => isSameTouchAction(targetTouches, e))
+                .map(e => getTargetTouch(targetTouches, e))
+                .filter(touch => touch)
                 .map(e => {
                     return {
                         type: 'manual',
-                        x: e.targetTouches[0].clientX,
-                        y: e.targetTouches[0].clientY,
+                        x: e.clientX,
+                        y: e.clientY,
                         top, left, width, height
                     }
                 })
@@ -131,7 +132,7 @@ function view(state$) {
 }
 
 export function Stick({ DOM, props$ = xs.of({}) }) {
-    const defaultProps$ = xs.of({ mode: ALL_DIR_STICK_MODE, padding: 16, backDuration: 500, backEase: tween.power2.easeInOut });
+    const defaultProps$ = xs.of({ mode: ALL_DIR_STICK_MODE, padding: 16, backDuration: 200, backEase: tween.power2.easeInOut });
     const newProps$ = xs.combine(defaultProps$, props$).map(([a, b]) => ({ ...a, ...b }));
     const action$ = intent(DOM);
     const state$ = model(action$, newProps$);

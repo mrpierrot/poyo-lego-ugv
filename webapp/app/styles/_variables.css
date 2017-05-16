@@ -3,5 +3,6 @@
     --black: #000000;
     --white: #ffffff;
     --grey-blue: #84a2ae;
-    --background-color: var(--grey-blue);
+    --grey-blue-a: rgba(132, 162, 174, 0.3);
+    --background-color: var(--grey-blue-a);
 }
