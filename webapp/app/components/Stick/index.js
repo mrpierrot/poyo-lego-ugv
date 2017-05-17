@@ -4,7 +4,7 @@ import { html } from 'snabbdom-jsx';
 import _ from 'lodash';
 
 
-function capValue(val,min,max) {
+function capValue(val, min, max) {
     if (val < min) return min;
     if (val > max) return max;
     return val;
@@ -28,6 +28,19 @@ function isSameTouchAction(targetTouches, e) {
     return _.some(e.changedTouches, (o) => _.some(targetTouches, a => a.identifier == o.identifier));
 }
 
+function calculateRates({ x, y, top, left, width, height }, { mode, padding }) {
+    const w = width - padding * 2;
+    const h = height - padding * 2;
+    const rateX = (x - left - w * 0.5 - padding) / (w * 0.5);
+    const rateY = (y - top - h * 0.5 - padding) / (h * 0.5);
+    switch (mode) {
+        default:
+        case ALL_DIR_STICK_MODE: return { rateX: capValue(rateX, -1, 1), rateY: capValue(rateY, -1, 1), mode, padding }
+        case VERTICAL_STICK_MODE: return { rateX: 0, rateY: capValue(rateY, -1, 1), mode, padding }
+        case HORIZONTAL_STICK_MODE: return { rateX: capValue(rateX, -1, 1), rateY: 0, mode, padding }
+    }
+}
+
 function intent(DOM) {
     const stick = DOM.select('.stick-base');
     const root = DOM.select('body');
@@ -46,11 +59,11 @@ function intent(DOM) {
             const moveAction$ = touchMove$
                 .map(e => getTargetTouch(targetTouches, e))
                 .filter(touch => touch)
-                .map(e => {
+                .map(touch => {
                     return {
-                        type: 'manual',
-                        x: e.clientX,
-                        y: e.clientY,
+                        type: 'brut',
+                        x: touch.clientX,
+                        y: touch.clientY,
                         top, left, width, height
                     }
                 })
@@ -58,9 +71,9 @@ function intent(DOM) {
 
             const repositionneAction$ = endAction$.take(1).map((touch) => {
                 return {
-                    type: 'auto',
-                    touchX: touch.clientX,
-                    touchY: touch.clientY,
+                    type: 'smooth',
+                    x: touch.clientX,
+                    y: touch.clientY,
                     top, left, width, height
                 }
             })
@@ -77,44 +90,33 @@ function model(action$, props$) {
     return props$
         .map((props) => action$
             .map((data) => {
-                if (data.type != 'auto') return xs.of(data);
-                const padding = props.padding;
-                const { touchX, touchY, top, left, height, width } = data;
-                const fromX = capValue(touchX,left-padding,left + width - padding);
-                const fromY = capValue(touchY,top-padding,top + height - padding);
-                const tweenX = tween({
-                    from: fromX,
-                    to: left + width * 0.5,
-                    ease: props.backDurationEase,
-                    duration: props.backDuration
-                });
+                if (data.type == 'smooth') {
+                    const { padding } = props;
+                    const { x, y, top, left, height, width } = data;
+                    const fromX = capValue(x, left - padding, left + width - padding);
+                    const fromY = capValue(y, top - padding, top + height - padding);
+                    const tweenX = tween({
+                        from: fromX,
+                        to: left + width * 0.5,
+                        ease: props.backDurationEase,
+                        duration: props.backDuration
+                    });
 
-                const tweenY = tween({
-                    from: fromY,
-                    to: top + height * 0.5,
-                    ease: props.backDurationEase,
-                    duration: props.backDuration
-                })
+                    const tweenY = tween({
+                        from: fromY,
+                        to: top + height * 0.5,
+                        ease: props.backDurationEase,
+                        duration: props.backDuration
+                    })
 
-                return xs.combine(tweenX, tweenY)
-                    .map(([x, y]) => ({
-                        x, y, top, left, width, height
-                    }));
-            }).flatten()
-            .map(({ x, y, top, left, width, height }) => {
-                const padding = props.padding;
-                const w = width - padding * 2;
-                const h = height - padding * 2;
-                const rateX = (x - left - w * 0.5 - padding) / (w * 0.5);
-                const rateY = (y - top - h * 0.5 - padding) / (h * 0.5);
-                switch (props.mode) {
-                    default:
-                    case ALL_DIR_STICK_MODE: return { rateX: capValue(rateX,-1,1), rateY: capValue(rateY,-1,1), mode: props.mode, padding }
-                    case VERTICAL_STICK_MODE: return { rateX: 0, rateY: capValue(rateY,-1,1), mode: props.mode, padding }
-                    case HORIZONTAL_STICK_MODE: return { rateX: capValue(rateX,-1,1), rateY: 0, mode: props.mode, padding }
+                    return xs.combine(tweenX, tweenY)
+                        .map(([x, y]) => calculateRates({
+                            x, y, top, left, width, height
+                        }, props));
+                } else {
+                    return xs.of(calculateRates(data, props));
                 }
-
-            })
+            }).flatten()
             .startWith({ ...props, rateX: 0, rateY: 0 })
         )
         .flatten()
