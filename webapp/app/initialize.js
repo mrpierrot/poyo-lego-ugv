@@ -61,14 +61,19 @@ function main(sources) {
         <div className="gamestick-wrapper">
           <header className="gamestick-header">
             <div className="checkbox">
-              <input id="action-camera-power-toggle" type="checkbox" className="action-camera-power-toggle" checked={cameraState == "streaming"} />
-              <label htmlFor="action-camera-power-toggle">Camera</label>
+              <input id="action-camera-power-toggle" type="checkbox" className="action-camera-power-toggle toggle-button" checked={cameraState == "streaming"} />
+              <label htmlFor="action-camera-power-toggle">
+                <span className="toggle-button-inner"></span>
+                <span className="toggle-button-switch"></span>
+              </label>
             </div>
             <div className="checkbox">
-              <input id="action-fullscreen-toggle" type="checkbox" className="action-fullscreen-toggle" checked={fsChange.enabled} />
-              <label htmlFor="action-fullscreen-toggle">Fullscreen</label>
+              <input id="action-fullscreen-toggle" type="checkbox" className="action-fullscreen-toggle toggle-button" checked={fsChange.enabled} />
+              <label htmlFor="action-fullscreen-toggle">
+                <span className="toggle-button-inner"></span>
+                <span className="toggle-button-switch"></span>
+              </label>
             </div>
-            {cameraState}
           </header>
           <div className="gamestick">
             {leftStickDOM}
