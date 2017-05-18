@@ -57,6 +57,14 @@ body {
     background-color: var(--black);
 }
 
+.io-status {
+    color: var(--white);
+}
+
+.io-status-connect {
+
+}
+
 .button {
     background: var(--background-color);
 }

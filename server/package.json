@@ -15,7 +15,7 @@
     "cycle-socket.io-server": "0.0.4",
     "express": "^4.15.2",
     "nodemon": "^1.11.0",
-    "socket.io": "^1.7.3",
+    "socket.io": "^2.0.1",
     "xstream": "^10.7.0",
     "fluent-ffmpeg": "^2.1.2"
   },

@@ -18,7 +18,7 @@
     "lodash": "^4.17.4",
     "normalize.css": "^5.0.0",
     "snabbdom-jsx": "^0.3.1",
-    "socket.io-client": "^1.7.3",
+    "socket.io-client": "^2.0.1",
     "xstream": "^10.3.0"
   },
   "devDependencies": {

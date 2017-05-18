@@ -18,18 +18,27 @@ import { makeJSMpegDriver } from 'drivers/jsmpeg';
     });
 }*/
 
+function ioGet(socketIO,name){
+  return socketIO.get(name).map(data => ({name:name,data}));
+}
+
 function main(sources) {
 
   const { DOM, socketIO, fullscreen, jsmpeg } = sources;
   const cameraPowerToggleAction$ = DOM.select('.action-camera-power-toggle').events('change').map(e => e.target.checked);
   const fullscreenToggleAction$ = DOM.select('.action-fullscreen-toggle').events('change').map(e => e.target.checked);
   const fullscreenChange$ = fullscreen.change();
+  const ioConnect$ = ioGet(socketIO,'connect');
+  const ioDisconnect$ = ioGet(socketIO,'disconnect');
   const cameraData$ = socketIO.get('camera:data');
   const cameraState$ = socketIO.get('camera:state');
   const videoPlayer$ = jsmpeg();
 
+  const ioStatus$ = xs.merge(ioConnect$,ioDisconnect$).startWith({name:'disconnect'}).debug();
+
   const leftStick = isolate(Stick, { DOM: 'left-stick' })({ DOM, props$: xs.of({ mode: HORIZONTAL_STICK_MODE }) });
   const rightStick = isolate(Stick, { DOM: 'right-stick' })({ DOM, props$: xs.of({ mode: VERTICAL_STICK_MODE }) });
+
 
 
   const fullscreen$ = fullscreenToggleAction$.map(() => ({
@@ -56,8 +65,8 @@ function main(sources) {
   }));
 
   const sinks = {
-    DOM: xs.combine(leftStick.DOM, rightStick.DOM, fullscreenChange$, videoPlayer$, cameraState$)
-      .map(([leftStickDOM, rightStickDOM, fsChange, videoPlayer, cameraState]) =>
+    DOM: xs.combine(leftStick.DOM, rightStick.DOM, fullscreenChange$, videoPlayer$, cameraState$,ioStatus$)
+      .map(([leftStickDOM, rightStickDOM, fsChange, videoPlayer, cameraState,ioStatus]) =>
         <div className="gamestick-wrapper">
           <header className="gamestick-header">
             <div className="checkbox">
@@ -67,6 +76,7 @@ function main(sources) {
                 <span className="toggle-button-switch"></span>
               </label>
             </div>
+            <div className={"io-status io-status-"+ioStatus.name}>{ioStatus.name}</div>
             <div className="checkbox">
               <input id="action-fullscreen-toggle" type="checkbox" className="action-fullscreen-toggle toggle-button" checked={fsChange.enabled} />
               <label htmlFor="action-fullscreen-toggle">
