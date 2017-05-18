@@ -1,11 +1,15 @@
 const xs = require('xstream').default,
     flattenConcurrently = require('xstream/extra/flattenConcurrently').default,
     { run } = require('@cycle/run'),
+    { TACHO_MOTOR, MOTOR_3,MOTOR_2,MOTOR_1, SPEED_SP, CMD_RUN_TO_ABS_POS,CMD_RUN_FOREVER, COMMAND, CMD_STOP, POSITION_SP } = require('cycle-ev3dev/src/constants'),
     { makeSocketIOServerDriver } = require('cycle-socket.io-server'),
     { makeEv3devDriver } = require('cycle-ev3dev'),
     { makeFfmpegDriver } = require('./ffmpeg/driver'),
     { createMacOSCameraCommand,createRaspicamCommand } = require('./ffmpeg/preset');
 
+const SPEED_MAX = 500;
+const DIR_POS_MAX = 80;
+const DIR_SPEED_MAX = 300;
 
 exports.makeController = function makeController(io){
 
@@ -17,9 +21,58 @@ exports.makeController = function makeController(io){
         
         const ev3devActions$ = connection$.map( socket => {
             const disconnection$ = socket.events('disconnect');
+
+           /* const speed$ = socket.events('speed').remember();
+            const direction$ = socket.events('direction').remember();
+
+            return xs.periodic(100).map(() => {
+                return xs.merge(
+                    speed$.take(1).map((event) => ({
+                        [TACHO_MOTOR]: {
+                            [MOTOR_1]: [
+                                { attr: SPEED_SP, value: event.data.value*SPEED_MAX },
+                                { attr: COMMAND, value: CMD_RUN_FOREVER }
+                            ],
+                            [MOTOR_2]: [
+                                { attr: SPEED_SP, value: event.data.value*SPEED_MAX },
+                                { attr: COMMAND, value: CMD_RUN_FOREVER }
+                            ]
+                        }
+                    })),
+                    direction$.take(1).debug().map((event) => ({
+                        [TACHO_MOTOR]: {
+                            [MOTOR_3]: [
+                                { attr: SPEED_SP, value: DIR_SPEED_MAX },
+                                { attr: POSITION_SP, value: event.data.value*DIR_POS_MAX },
+                                { attr: COMMAND, value: CMD_RUN_TO_ABS_POS }
+                            ]
+                        }
+                    }))
+                ).endWhen(disconnection$);
+            }).flatten();*/
+
             return xs.merge(
-                socket.events('speed'),
-                socket.events('direction')
+                socket.events('speed').map((event) => ({
+                    [TACHO_MOTOR]: {
+                        [MOTOR_1]: [
+                            { attr: SPEED_SP, value: event.data.value*SPEED_MAX },
+                            { attr: COMMAND, value: CMD_RUN_FOREVER }
+                        ],
+                        [MOTOR_2]: [
+                            { attr: SPEED_SP, value: event.data.value*SPEED_MAX },
+                            { attr: COMMAND, value: CMD_RUN_FOREVER }
+                        ]
+                    }
+                })),
+                socket.events('direction').debug().map((event) => ({
+                    [TACHO_MOTOR]: {
+                        [MOTOR_3]: [
+                            { attr: SPEED_SP, value: DIR_SPEED_MAX },
+                            { attr: POSITION_SP, value: event.data.value*DIR_POS_MAX },
+                            { attr: COMMAND, value: CMD_RUN_TO_ABS_POS }
+                        ]
+                    }
+                }))
             ).endWhen(disconnection$);
         }).compose(flattenConcurrently);
 
@@ -44,7 +97,7 @@ exports.makeController = function makeController(io){
 
         const sinks = {
             socketServer: cameraActions$,
-            /*ev3dev: ev3devActions$.debug()*/
+            ev3dev: ev3devActions$
         };
         return sinks;
     }
@@ -52,8 +105,8 @@ exports.makeController = function makeController(io){
     const drivers = {
         socketServer:makeSocketIOServerDriver(io),
         ev3dev:makeEv3devDriver(),
-        ffmpeg:makeFfmpegDriver(createMacOSCameraCommand)
-        //ffmpeg:makeFfmpegDriver(createRaspicamCommand)
+        //ffmpeg:makeFfmpegDriver(createMacOSCameraCommand)
+        ffmpeg:makeFfmpegDriver(createRaspicamCommand)
     };
 
     run(main, drivers);
