@@ -9,7 +9,7 @@ const xs = require('xstream').default,
 
 const SPEED_MAX = 500;
 const DIR_POS_MAX = 80;
-const DIR_SPEED_MAX = 300;
+const DIR_SPEED_MAX = 150;
 
 exports.makeController = function makeController(io){
 
