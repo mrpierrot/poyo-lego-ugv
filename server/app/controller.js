@@ -22,53 +22,24 @@ exports.makeController = function makeController(io){
         const ev3devActions$ = connection$.map( socket => {
             const disconnection$ = socket.events('disconnect');
 
-           /* const speed$ = socket.events('speed').remember();
-            const direction$ = socket.events('direction').remember();
-
-            return xs.periodic(100).map(() => {
-                return xs.merge(
-                    speed$.take(1).map((event) => ({
-                        [TACHO_MOTOR]: {
-                            [MOTOR_1]: [
-                                { attr: SPEED_SP, value: event.data.value*SPEED_MAX },
-                                { attr: COMMAND, value: CMD_RUN_FOREVER }
-                            ],
-                            [MOTOR_2]: [
-                                { attr: SPEED_SP, value: event.data.value*SPEED_MAX },
-                                { attr: COMMAND, value: CMD_RUN_FOREVER }
-                            ]
-                        }
-                    })),
-                    direction$.take(1).debug().map((event) => ({
-                        [TACHO_MOTOR]: {
-                            [MOTOR_3]: [
-                                { attr: SPEED_SP, value: DIR_SPEED_MAX },
-                                { attr: POSITION_SP, value: event.data.value*DIR_POS_MAX },
-                                { attr: COMMAND, value: CMD_RUN_TO_ABS_POS }
-                            ]
-                        }
-                    }))
-                ).endWhen(disconnection$);
-            }).flatten();*/
-
             return xs.merge(
                 socket.events('speed').map((event) => ({
                     [TACHO_MOTOR]: {
                         [MOTOR_1]: [
-                            { attr: SPEED_SP, value: event.data.value*SPEED_MAX },
+                            { attr: SPEED_SP, value: Math.round(event.data.value*SPEED_MAX) },
                             { attr: COMMAND, value: CMD_RUN_FOREVER }
                         ],
                         [MOTOR_2]: [
-                            { attr: SPEED_SP, value: event.data.value*SPEED_MAX },
+                            { attr: SPEED_SP, value: Math.round(event.data.value*SPEED_MAX) },
                             { attr: COMMAND, value: CMD_RUN_FOREVER }
                         ]
                     }
                 })),
-                socket.events('direction').debug().map((event) => ({
+                socket.events('direction').map((event) => ({
                     [TACHO_MOTOR]: {
                         [MOTOR_3]: [
                             { attr: SPEED_SP, value: DIR_SPEED_MAX },
-                            { attr: POSITION_SP, value: event.data.value*DIR_POS_MAX },
+                            { attr: POSITION_SP, value: Math.round(event.data.value*DIR_POS_MAX) },
                             { attr: COMMAND, value: CMD_RUN_TO_ABS_POS }
                         ]
                     }

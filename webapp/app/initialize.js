@@ -8,6 +8,7 @@ import { html } from 'snabbdom-jsx';
 import { Stick, VERTICAL_STICK_MODE, HORIZONTAL_STICK_MODE } from 'components/Stick';
 import { makeFullscreenDriver } from 'drivers/fullscreen';
 import { makeJSMpegDriver } from 'drivers/jsmpeg';
+import dropRepeats from 'xstream/extra/dropRepeats'
 
 // Register the service worker if available.
 /*if ('serviceWorker' in navigator) {
@@ -18,8 +19,15 @@ import { makeJSMpegDriver } from 'drivers/jsmpeg';
     });
 }*/
 
-function ioGet(socketIO,name){
-  return socketIO.get(name).map(data => ({name:name,data}));
+function formatIOGet(socketIO, name) {
+  return socketIO.get(name).map(data => ({ name: name, data }));
+}
+
+function flowControledStream(input$, mapping, delay = 100, isEqual = (a, b) => a.message.value == b.message.value) {
+  const memoryInput$ = input$.remember();
+  return xs.periodic(100).map(() => {
+    return memoryInput$.take(1).map(mapping);
+  }).flatten().compose(dropRepeats(isEqual));
 }
 
 function main(sources) {
@@ -28,18 +36,16 @@ function main(sources) {
   const cameraPowerToggleAction$ = DOM.select('.action-camera-power-toggle').events('change').map(e => e.target.checked);
   const fullscreenToggleAction$ = DOM.select('.action-fullscreen-toggle').events('change').map(e => e.target.checked);
   const fullscreenChange$ = fullscreen.change();
-  const ioConnect$ = ioGet(socketIO,'connect');
-  const ioDisconnect$ = ioGet(socketIO,'disconnect');
+  const ioConnect$ = formatIOGet(socketIO, 'connect');
+  const ioDisconnect$ = formatIOGet(socketIO, 'disconnect');
   const cameraData$ = socketIO.get('camera:data');
   const cameraState$ = socketIO.get('camera:state');
   const videoPlayer$ = jsmpeg();
 
-  const ioStatus$ = xs.merge(ioConnect$,ioDisconnect$).startWith({name:'disconnect'}).debug();
+  const ioStatus$ = xs.merge(ioConnect$, ioDisconnect$).startWith({ name: 'disconnect' }).debug();
 
   const leftStick = isolate(Stick, { DOM: 'left-stick' })({ DOM, props$: xs.of({ mode: HORIZONTAL_STICK_MODE }) });
   const rightStick = isolate(Stick, { DOM: 'right-stick' })({ DOM, props$: xs.of({ mode: VERTICAL_STICK_MODE }) });
-
-
 
   const fullscreen$ = fullscreenToggleAction$.map(() => ({
     action: 'toggle'
@@ -54,19 +60,19 @@ function main(sources) {
         messageType: 'camera:stop'
       });
 
-  const directionMessage$ = leftStick.value.map((data) => ({
+  const directionMessage$ = flowControledStream(leftStick.value, (data) => ({
     messageType: 'direction',
     message: { value: data.rateX },
   }));
 
-  const speedMessage$ = rightStick.value.map(data => ({
+  const speedMessage$ = flowControledStream(rightStick.value, (data) => ({
     messageType: 'speed',
     message: { value: data.rateY },
   }));
 
   const sinks = {
-    DOM: xs.combine(leftStick.DOM, rightStick.DOM, fullscreenChange$, videoPlayer$, cameraState$,ioStatus$)
-      .map(([leftStickDOM, rightStickDOM, fsChange, videoPlayer, cameraState,ioStatus]) =>
+    DOM: xs.combine(leftStick.DOM, rightStick.DOM, fullscreenChange$, videoPlayer$, cameraState$, ioStatus$)
+      .map(([leftStickDOM, rightStickDOM, fsChange, videoPlayer, cameraState, ioStatus]) =>
         <div className="gamestick-wrapper">
           <header className="gamestick-header">
             <div className="checkbox">
@@ -76,7 +82,7 @@ function main(sources) {
                 <span className="toggle-button-switch"></span>
               </label>
             </div>
-            <div className={"io-status io-status-"+ioStatus.name}>{ioStatus.name}</div>
+            <div className={"io-status io-status-" + ioStatus.name}>{ioStatus.name}</div>
             <div className="checkbox">
               <input id="action-fullscreen-toggle" type="checkbox" className="action-fullscreen-toggle toggle-button" checked={fsChange.enabled} />
               <label htmlFor="action-fullscreen-toggle">
