@@ -25,7 +25,7 @@ function formatIOGet(socketIO, name) {
 
 function flowControledStream(input$, mapping, delay = 100, isEqual = (a, b) => a.message.value == b.message.value) {
   const memoryInput$ = input$.remember();
-  return xs.periodic(100).map(() => {
+  return xs.periodic(delay).map(() => {
     return memoryInput$.take(1).map(mapping);
   }).flatten().compose(dropRepeats(isEqual));
 }
