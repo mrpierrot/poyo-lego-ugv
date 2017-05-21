@@ -42,7 +42,7 @@ function main(sources) {
   const cameraState$ = socketIO.get('camera:state');
   const videoPlayer$ = jsmpeg();
 
-  const ioStatus$ = xs.merge(ioConnect$, ioDisconnect$).startWith({ name: 'disconnect' }).debug();
+  const ioStatus$ = xs.merge(ioConnect$, ioDisconnect$).startWith({ name: 'disconnect' });
 
   const leftStick = isolate(Stick, { DOM: 'left-stick' })({ DOM, props$: xs.of({ mode: HORIZONTAL_STICK_MODE }) });
   const rightStick = isolate(Stick, { DOM: 'right-stick' })({ DOM, props$: xs.of({ mode: VERTICAL_STICK_MODE }) });
@@ -105,11 +105,14 @@ function main(sources) {
   return sinks;
 }
 
-const drivers = {
-  DOM: makeDOMDriver('#app'),
-  socketIO: makeSocketIODriver(io()),
-  fullscreen: makeFullscreenDriver(),
-  jsmpeg: makeJSMpegDriver()
-};
+export default function init({ socketUrl }){
+  const drivers = {
+    DOM: makeDOMDriver('#app'),
+    socketIO: makeSocketIODriver(io(socketUrl)),
+    fullscreen: makeFullscreenDriver(),
+    jsmpeg: makeJSMpegDriver()
+  };
 
-run(main, drivers);
+  run(main, drivers);
+}
+
