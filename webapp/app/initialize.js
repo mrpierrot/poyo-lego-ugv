@@ -108,7 +108,7 @@ function main(sources) {
 export default function init({ socketUrl }){
   const drivers = {
     DOM: makeDOMDriver('#app'),
-    socketIO: makeSocketIODriver(io(socketUrl)),
+    socketIO: makeSocketIODriver(io(socketUrl,{secure: true})),
     fullscreen: makeFullscreenDriver(),
     jsmpeg: makeJSMpegDriver()
   };

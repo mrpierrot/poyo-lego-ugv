@@ -1,0 +1,9 @@
+{
+    "ssl":{
+        "key":"/certs/key.pem",
+        "cert":"/certs/cert.pem"
+    },
+    "ngrok":{
+
+    }
+}

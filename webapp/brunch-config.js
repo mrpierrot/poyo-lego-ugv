@@ -1,5 +1,12 @@
 // See http://brunch.io for documentation.
-const serverRoot = '../server';
+
+const serverRoot = __dirname+'/../server';
+
+const options = {
+    key:  serverRoot+'/certs/key.pem',
+    cert: serverRoot+'/certs/cert.pem'
+};
+
 
 exports.files = {
   javascripts: {
@@ -24,6 +31,17 @@ exports.paths = {
 }
 
 exports.plugins = {
+   autoReload: {
+     /* enabled: {
+        css: on,
+        js: on,
+        assets: off
+      },
+      port: [1234, 2345, 3456],*/
+      keyPath: options.key,
+      certPath: options.cert,
+      forcewss: true
+  },
   babel: {
     presets: ['latest'], 
     plugins: [ 

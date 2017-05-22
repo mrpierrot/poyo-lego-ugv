@@ -1,5 +1,6 @@
 **/node_modules
 .vscode
 server/public
+server/private.json
 server/certs/*
 !server/certs/.keep
