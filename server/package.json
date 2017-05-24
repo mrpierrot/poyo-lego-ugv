@@ -7,7 +7,8 @@
     "start": "nodemon app/index.js --exec babel-node",
     "build": "babel app -d dist",
     "watch": "babel app -d dist -w",
-    "serve": "babel app -d dist -w & nodemon dist/index.js",
+    "serve": "nodemon dist/index.js",
+    "watch:serve": "npm run watch & sleep 5 && npm run serve",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Pierre Chabiland",
