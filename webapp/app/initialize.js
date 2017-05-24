@@ -50,6 +50,9 @@ function main(sources) {
   const leftStick = isolate(Stick, { DOM: 'left-stick' })({ DOM, props$: xs.of({ mode: HORIZONTAL_STICK_MODE }) });
   const rightStick = isolate(Stick, { DOM: 'right-stick' })({ DOM, props$: xs.of({ mode: VERTICAL_STICK_MODE }) });
 
+  const directionMessage$ = stickStreamToSocketStream(Time,leftStick.value,'direction');
+  const speedMessage$ = stickStreamToSocketStream(Time,rightStick.value,'speed');
+
   const fullscreen$ = fullscreenToggleAction$.map(() => ({
     action: 'toggle'
   }));
@@ -62,9 +65,6 @@ function main(sources) {
       {
         messageType: 'camera:stop'
       });
-
-  const directionMessage$ = stickStreamToSocketStream(Time,leftStick.value,'direction');
-  const speedMessage$ = stickStreamToSocketStream(Time,rightStick.value,'speed');
 
   const sinks = {
     DOM: xs.combine(leftStick.DOM, rightStick.DOM, fullscreenChange$, videoPlayer$, cameraState$, ioStatus$)

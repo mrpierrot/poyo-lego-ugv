@@ -4,12 +4,12 @@ const { makeController } = require('./controller');
 const cons = require('consolidate');
 const ngrok = require('./ngrok-promise');
 const eddystoneBeacon = require('eddystone-beacon');
-const private = require('../private.json');
+const privateConf = require('../private.json');
 
 
 const httpsOptions = {
-    key: fs.readFileSync(__dirname + '/..' + private.ssl.key),
-    cert: fs.readFileSync(__dirname + '/..' + private.ssl.cert)
+    key: fs.readFileSync(__dirname + '/..' + privateConf.ssl.key),
+    cert: fs.readFileSync(__dirname + '/..' + privateConf.ssl.cert)
 };
 
 const beaconOptions = {
@@ -33,7 +33,7 @@ exports.startServer = (port, path, callback) => {
 
         app.use(express.static(publicPath));
         app.get('/app', function (req, res) {
-            cons.handlebars(__dirname + '/templates/app.html', { socketUrl: localIPUrl })
+            cons.handlebars(__dirname + '/../templates/app.html', { socketUrl: localIPUrl })
                 .then(function (html) {
                     res.send(html);
                 })
@@ -43,7 +43,7 @@ exports.startServer = (port, path, callback) => {
         });
 
         app.get('/', function (req, res) {
-            cons.handlebars(__dirname + '/templates/index.html', { localIPUrl })
+            cons.handlebars(__dirname + '/../templates/index.html', { localIPUrl })
                 .then(function (html) {
                     res.send(html);
                 })
@@ -59,7 +59,7 @@ exports.startServer = (port, path, callback) => {
 
         makeController(io);
 
-        ngrok.connect(Object.assign({ addr: HTTP_PORT }, private.ngrok))
+        ngrok.connect(Object.assign({ addr: HTTP_PORT }, privateConf.ngrok))
             .then(url => {
                 console.log("App available on " + url);
                 eddystoneBeacon.advertiseUrl(url, [beaconOptions]);

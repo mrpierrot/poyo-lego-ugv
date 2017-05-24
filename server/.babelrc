@@ -1,0 +1,8 @@
+{
+   "presets": ["latest"], 
+    "plugins": [ 
+      "syntax-jsx", 
+      "transform-object-rest-spread",
+      ["transform-react-jsx", {"pragma": "html"}]
+    ]
+}

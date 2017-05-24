@@ -4,7 +4,10 @@
   "description": "Lego UGV server app ",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon",
+    "start": "nodemon app/index.js --exec babel-node",
+    "build": "babel app -d dist",
+    "watch": "babel app -d dist -w",
+    "serve": "babel app -d dist -w & nodemon dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Pierre Chabiland",
@@ -23,5 +26,10 @@
     "socket.io": "^2.0.1",
     "xstream": "^10.7.0"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "babel-cli": "^6.24.1",
+    "babel-plugin-transform-object-rest-spread": "^6.23.0",
+    "babel-plugin-transform-react-jsx": "^6.24.1",
+    "babel-preset-latest": "^6.24.1"
+  }
 }
