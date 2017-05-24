@@ -11,6 +11,7 @@
   "license": "Beerware",
   "dependencies": {
     "@cycle/run": "^3.0.0",
+    "@cycle/time": "^0.8.0",
     "consolidate": "^0.14.5",
     "cycle-ev3dev": "0.0.2",
     "cycle-socket.io-server": "0.0.4",

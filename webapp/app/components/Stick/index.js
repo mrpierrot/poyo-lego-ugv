@@ -31,13 +31,13 @@ function isSameTouchAction(targetTouches, e) {
 function calculateRates({ x, y, top, left, width, height }, { mode, padding }) {
     const w = width - padding * 2;
     const h = height - padding * 2;
-    const rateX = (x - left - w * 0.5 - padding) / (w * 0.5);
-    const rateY = (y - top - h * 0.5 - padding) / (h * 0.5);
+    const rateX = capValue((x - left - w * 0.5 - padding) / (w * 0.5),-1, 1);
+    const rateY = capValue((y - top - h * 0.5 - padding) / (h * 0.5),-1,1);
     switch (mode) {
         default:
-        case ALL_DIR_STICK_MODE: return { rateX: capValue(rateX, -1, 1), rateY: capValue(rateY, -1, 1), mode, padding }
-        case VERTICAL_STICK_MODE: return { rateX: 0, rateY: capValue(rateY, -1, 1), mode, padding }
-        case HORIZONTAL_STICK_MODE: return { rateX: capValue(rateX, -1, 1), rateY: 0, mode, padding }
+        case ALL_DIR_STICK_MODE: return { rateX, rateY, mode, padding }
+        case VERTICAL_STICK_MODE: return { rate:rateY, rateX: 0, rateY, mode, padding }
+        case HORIZONTAL_STICK_MODE: return { rate:rateX, rateX, rateY: 0, mode, padding }
     }
 }
 

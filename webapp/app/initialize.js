@@ -8,6 +8,7 @@ import { html } from 'snabbdom-jsx';
 import { Stick, VERTICAL_STICK_MODE, HORIZONTAL_STICK_MODE } from 'components/Stick';
 import { makeFullscreenDriver } from 'drivers/fullscreen';
 import { makeJSMpegDriver } from 'drivers/jsmpeg';
+import { timeDriver } from '@cycle/time';
 import dropRepeats from 'xstream/extra/dropRepeats'
 
 // Register the service worker if available.
@@ -23,16 +24,18 @@ function formatIOGet(socketIO, name) {
   return socketIO.get(name).map(data => ({ name: name, data }));
 }
 
-function flowControledStream(input$, mapping, delay = 100, isEqual = (a, b) => a.message.value == b.message.value) {
-  const memoryInput$ = input$.remember();
-  return xs.periodic(delay).map(() => {
-    return memoryInput$.take(1).map(mapping);
-  }).flatten().compose(dropRepeats(isEqual));
+function stickStreamToSocketStream(Time,input$,type,period=60){
+  return input$.compose(Time.throttle(period))
+    .compose(dropRepeats((a, b) => a.rate == b.rate))
+    .map((data) => ({
+      messageType: type,
+      message: { value: data.rate },
+    }));
 }
 
 function main(sources) {
 
-  const { DOM, socketIO, fullscreen, jsmpeg } = sources;
+  const { DOM, socketIO, fullscreen, jsmpeg, Time } = sources;
   const cameraPowerToggleAction$ = DOM.select('.action-camera-power-toggle').events('change').map(e => e.target.checked);
   const fullscreenToggleAction$ = DOM.select('.action-fullscreen-toggle').events('change').map(e => e.target.checked);
   const fullscreenChange$ = fullscreen.change();
@@ -60,15 +63,8 @@ function main(sources) {
         messageType: 'camera:stop'
       });
 
-  const directionMessage$ = flowControledStream(leftStick.value, (data) => ({
-    messageType: 'direction',
-    message: { value: data.rateX },
-  }));
-
-  const speedMessage$ = flowControledStream(rightStick.value, (data) => ({
-    messageType: 'speed',
-    message: { value: data.rateY },
-  }));
+  const directionMessage$ = stickStreamToSocketStream(Time,leftStick.value,'direction');
+  const speedMessage$ = stickStreamToSocketStream(Time,rightStick.value,'speed');
 
   const sinks = {
     DOM: xs.combine(leftStick.DOM, rightStick.DOM, fullscreenChange$, videoPlayer$, cameraState$, ioStatus$)
@@ -105,10 +101,11 @@ function main(sources) {
   return sinks;
 }
 
-export default function init({ socketUrl }){
+export default function init({ socketUrl }) {
   const drivers = {
     DOM: makeDOMDriver('#app'),
-    socketIO: makeSocketIODriver(io(socketUrl,{secure: true})),
+    Time: timeDriver,
+    socketIO: makeSocketIODriver(io(socketUrl, { secure: true })),
     fullscreen: makeFullscreenDriver(),
     jsmpeg: makeJSMpegDriver()
   };
