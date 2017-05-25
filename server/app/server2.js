@@ -37,14 +37,21 @@ exports.startServer = (port, path, callback) => {
     function main(sources) {
 
         const {httpServer} = sources;
-        const test$ = httpServer.match('/lol').map( ({req,res}) => {
+        const test$ = httpServer.match('/lol/:id/:name').map( ({req,res,params:{id,name}}) => {
             return {
                 res,
-                content: 'plop'
+                content: `id is ${id} and name is ${name}`
             };
-        })
+        });
 
-        httpServer.listen({port:port}).addListener({
+        const notFound$ = httpServer.notFound().map( ({req,res}) => {
+            return {
+                res,
+                content: `404 url '${req.url}' not found`
+            };
+        });
+
+        httpServer.listen({port}).addListener({
             next(){
                 console.log('server started')
             },
@@ -58,7 +65,7 @@ exports.startServer = (port, path, callback) => {
 
 
         const sinks = {
-            httpServer:test$
+            httpServer:xs.merge(test$,notFound$)
         }
 
         return sinks;
