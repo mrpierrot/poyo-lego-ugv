@@ -76,8 +76,8 @@ exports.makeController = function makeController(io){
     const drivers = {
         socketServer:makeSocketIOServerDriver(io),
         ev3dev:makeEv3devDriver(),
-        //ffmpeg:makeFfmpegDriver(createMacOSCameraCommand)
-        ffmpeg:makeFfmpegDriver(createRaspicamCommand)
+        ffmpeg:makeFfmpegDriver(createMacOSCameraCommand)
+        //ffmpeg:makeFfmpegDriver(createRaspicamCommand)
     };
 
     run(main, drivers);
