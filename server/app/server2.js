@@ -12,6 +12,7 @@ const xs = require('xstream').default,
     { makeSocketIOServerDriver } = require('cycle-socket.io-server'),
     { makeEv3devDriver } = require('cycle-ev3dev'),
     { makeFfmpegDriver } = require('./ffmpeg/driver'),
+    { makeLogDriver } = require('./log/driver'),
     { createMacOSCameraCommand, createRaspicamCommand } = require('./ffmpeg/preset');
 
 
@@ -38,34 +39,16 @@ exports.startServer = (port, path, callback) => {
 
         const {httpServer} = sources;
         const test$ = httpServer.match('/lol/:id/:name').map( ({req,res,params:{id,name}}) => {
-            return {
-                res,
-                content: `id is ${id} and name is ${name}`
-            };
+            return res.toText(`id is ${id} and name is ${name}`);
         });
 
         const notFound$ = httpServer.notFound().map( ({req,res}) => {
-            return {
-                res,
-                content: `404 url '${req.url}' not found`
-            };
+            return res.toText(`404 url '${req.url}' not found`,{statusCode:404});
         });
 
-        httpServer.listen({port}).addListener({
-            next(){
-                console.log('server started')
-            },
-            complete(){
-
-            },
-            error(){
-
-            }
-        })
-
-
         const sinks = {
-            httpServer:xs.merge(test$,notFound$)
+            httpServer:xs.merge(test$,notFound$),
+            log:httpServer.listen({port}).mapTo(`server started at ${port}`)
         }
 
         return sinks;
@@ -73,6 +56,7 @@ exports.startServer = (port, path, callback) => {
 
     const drivers = {
         httpServer: makeHttpServerDriver(),
+        log: makeLogDriver(),
         //socketServer: makeSocketIOServerDriver(io),
         //ev3dev: makeEv3devDriver(),
         //ffmpeg: makeFfmpegDriver(createMacOSCameraCommand)
