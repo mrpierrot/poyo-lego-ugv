@@ -18,7 +18,7 @@ function createHTTPListenerProducer(http, { port, hostname, backlog, options }) 
 
 function createResponseWrapper(res) {
 
-    function _send(content, { statusCode=200, headers=null, statusMessage=null }={}) {
+    function _send(content, { statusCode = 200, headers = null, statusMessage = null } = {}) {
         return {
             res,
             content,
@@ -29,8 +29,8 @@ function createResponseWrapper(res) {
     }
 
     return {
-        send:_send,
-        toJson(content, { statusCode=200, headers = null, statusMessage=null }={}) {
+        send: _send,
+        json(content, { statusCode = 200, headers = null, statusMessage = null } = {}) {
             return _send(content, {
                 statusCode,
                 headers: {
@@ -40,8 +40,8 @@ function createResponseWrapper(res) {
                 statusMessage
             });
         },
-        toHtml(content, { statusCode=200, headers = null, statusMessage=null }={}) {
-             return _send(content, {
+        html(content, { statusCode = 200, headers = null, statusMessage = null } = {}) {
+            return _send(content, {
                 statusCode,
                 headers: {
                     'Content-Type': 'text/html',
@@ -50,8 +50,8 @@ function createResponseWrapper(res) {
                 statusMessage
             });
         },
-        toText(content, { statusCode=200, headers = null, statusMessage=null }={}) {
-             return _send(content, {
+        text(content, { statusCode = 200, headers = null, statusMessage = null } = {}) {
+            return _send(content, {
                 statusCode,
                 headers: {
                     'Content-Type': 'text/plain',
@@ -60,8 +60,15 @@ function createResponseWrapper(res) {
                 statusMessage
             });
         },
-        redirect(path){
-
+        redirect(path, { statusCode = 302, headers = null, statusMessage = null } = {}) {
+            return _send(null, {
+                statusCode,
+                headers: {
+                    'Location': path,
+                    ...headers
+                },
+                statusMessage
+            });
         }
     }
 }
@@ -70,8 +77,8 @@ export default function makeHttpServerDriver() {
     return function httpServerDriver(input$) {
 
         input$.addListener({
-            next({ res, content, header = null, statusCode = 200, statusMessage = null }) {
-                res.writeHead(statusCode, statusMessage, header);
+            next({ res, content, headers = null, statusCode = 200, statusMessage = null }) {
+                res.writeHead(statusCode, statusMessage || '', headers);
                 res.end(content);
             },
             complete() {
@@ -85,24 +92,33 @@ export default function makeHttpServerDriver() {
         const routes = {};
         const http = require('http').createServer((req, res) => {
             const { path, value } = switchPath(req.url, routes);
-            if (value) {
-                //console.log(res);
-                value(req, createResponseWrapper(res));
-            } else {
-                // 404
-                res.writeHead(404);
-                res.end(`${req.url} not found`);
-            }
+            if (value && value(req, createResponseWrapper(res))) {
 
+            } else {
+                if (routes['*']) {
+                    routes['*'](req,createResponseWrapper(res));
+                } else {
+                    // 404
+                    res.writeHead(404);
+                    res.end(`${req.url} not found`);
+                }
+            }
 
         })
 
         const RE_PARAMS = /:([a-z0-9]+)/ig;
         const RE_PARAMS_2 = /:([a-z0-9]+)/ig;
 
-        function _match(path) {
+        function _match(path, methods = '*') {
             return xs.create({
                 start(listener) {
+
+                    function _send(req, res, params) {
+                        const valid = methods === '*' || req.method === methods || (Array.isArray(methods) && methods.indexOf(req.method) >= 0)
+                        if (valid) listener.next({ req, res, params });
+                        return valid;
+                    }
+
                     RE_PARAMS.lastIndex = 0;
                     if (RE_PARAMS.test(path)) {
                         RE_PARAMS.lastIndex = 0;
@@ -112,9 +128,9 @@ export default function makeHttpServerDriver() {
                             keys.push(key[1]);
                         }
 
-                        routes[path] = (...params) => (req, res) => listener.next({ req, res, params: _.zipObject(keys, params) });
+                        routes[path] = (...params) => (req, res) => _send(req, res, _.zipObject(keys, params));
                     } else {
-                        routes[path] = (req, res) => listener.next({ req, res, params: null });
+                        routes[path] = (req, res) => _send(req, res, null);
                     }
 
                 },

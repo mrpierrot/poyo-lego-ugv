@@ -33,6 +33,7 @@ exports.startServer = (port, path, callback) => {
 
         app.use(express.static(publicPath));
         app.get('/app', function (req, res) {
+            console.log("plop")
             cons.handlebars(__dirname + '/../templates/app.html', { socketUrl: localIPUrl })
                 .then(function (html) {
                     res.send(html);

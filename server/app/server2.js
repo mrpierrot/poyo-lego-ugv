@@ -39,15 +39,20 @@ exports.startServer = (port, path, callback) => {
 
         const {httpServer} = sources;
         const test$ = httpServer.match('/lol/:id/:name').map( ({req,res,params:{id,name}}) => {
-            return res.toText(`id is ${id} and name is ${name}`);
+            return res.text(`id is ${id} and name is ${name} ${req.method}`);
+        });
+
+        const test2$ = httpServer.match('/pouet').map( ({req,res}) => {
+            
+            return res.redirect('/lol/21/plouf');
         });
 
         const notFound$ = httpServer.notFound().map( ({req,res}) => {
-            return res.toText(`404 url '${req.url}' not found`,{statusCode:404});
+            return res.text(`404 url '${req.url}' not found`,{statusCode:404});
         });
 
         const sinks = {
-            httpServer:xs.merge(test$,notFound$),
+            httpServer:xs.merge(test$,test2$,notFound$),
             log:httpServer.listen({port}).mapTo(`server started at ${port}`)
         }
 
