@@ -1,6 +1,7 @@
 import xs from 'xstream';
 import switchPath from 'switch-path';
 import _ from 'lodash';
+import { createResponseWrapper } from './response';
 
 function createHTTPListenerProducer(http, { port, hostname, backlog, options }) {
     let _listener = null;
@@ -16,64 +17,28 @@ function createHTTPListenerProducer(http, { port, hostname, backlog, options }) 
     }
 }
 
-function createResponseWrapper(res) {
+function applyMiddlewares(middlewares,req,res){
 
-    function _send(content, { statusCode = 200, headers = null, statusMessage = null } = {}) {
-        return {
-            res,
-            content,
-            headers,
-            statusCode,
-            statusMessage
-        }
-    }
+    return new Promise((resolve,reject)=>{
 
-    return {
-        send: _send,
-        json(content, { statusCode = 200, headers = null, statusMessage = null } = {}) {
-            return _send(content, {
-                statusCode,
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...headers
-                },
-                statusMessage
-            });
-        },
-        html(content, { statusCode = 200, headers = null, statusMessage = null } = {}) {
-            return _send(content, {
-                statusCode,
-                headers: {
-                    'Content-Type': 'text/html',
-                    ...headers
-                },
-                statusMessage
-            });
-        },
-        text(content, { statusCode = 200, headers = null, statusMessage = null } = {}) {
-            return _send(content, {
-                statusCode,
-                headers: {
-                    'Content-Type': 'text/plain',
-                    ...headers
-                },
-                statusMessage
-            });
-        },
-        redirect(path, { statusCode = 302, headers = null, statusMessage = null } = {}) {
-            return _send(null, {
-                statusCode,
-                headers: {
-                    'Location': path,
-                    ...headers
-                },
-                statusMessage
-            });
+        const size = middlewares?middlewares.length:0;
+        let i = -1;
+
+        function next(){
+            i++;
+            if(i < size ){
+                middlewares[i](req,res,next);
+            }else{
+                resolve();
+            }
         }
-    }
+
+        next();
+    })
 }
 
-export default function makeHttpServerDriver() {
+export default function makeHttpServerDriver({ middlewares=[] } = {}) {
+
     return function httpServerDriver(input$) {
 
         input$.addListener({
@@ -91,19 +56,20 @@ export default function makeHttpServerDriver() {
 
         const routes = {};
         const http = require('http').createServer((req, res) => {
-            const { path, value } = switchPath(req.url, routes);
-            if (value && value(req, createResponseWrapper(res))) {
+            applyMiddlewares(middlewares,req,res).then(()=>{
+                 const { path, value } = switchPath(req.url, routes);
+                if (value && value(req, createResponseWrapper(res))) {
 
-            } else {
-                if (routes['*']) {
-                    routes['*'](req,createResponseWrapper(res));
                 } else {
-                    // 404
-                    res.writeHead(404);
-                    res.end(`${req.url} not found`);
+                    if (routes['*']) {
+                        routes['*'](req, createResponseWrapper(res));
+                    } else {
+                        // 404
+                        res.writeHead(404);
+                        res.end(`${req.url} not found`);
+                    }
                 }
-            }
-
+            });
         })
 
         const RE_PARAMS = /:([a-z0-9]+)/ig;
@@ -145,11 +111,11 @@ export default function makeHttpServerDriver() {
             notFound() {
                 return _match('*');
             },
-            get(path) {
-
+            get(path, methods = []) {
+                return _match(path, ['GET', ...methods]);
             },
             post(path) {
-
+                return _match(path, ['POST', ...methods]);
             },
             listen({ port, hostname, backlog }) {
                 return xs.create(createHTTPListenerProducer(http, { port, hostname, backlog }))

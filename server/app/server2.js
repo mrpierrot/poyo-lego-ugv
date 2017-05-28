@@ -5,6 +5,7 @@ const cons = require('consolidate');
 const ngrok = require('./ngrok-promise');
 const eddystoneBeacon = require('eddystone-beacon');
 const privateConf = require('../private.json');
+const serveStatic = require('serve-static');
 
 const xs = require('xstream').default,
     flattenConcurrently = require('xstream/extra/flattenConcurrently').default,
@@ -38,7 +39,7 @@ exports.startServer = (port, path, callback) => {
     function main(sources) {
 
         const {httpServer} = sources;
-        const test$ = httpServer.match('/lol/:id/:name').map( ({req,res,params:{id,name}}) => {
+        const test$ = httpServer.get('/lol/:id/:name').map( ({req,res,params:{id,name}}) => {
             return res.text(`id is ${id} and name is ${name} ${req.method}`);
         });
 
@@ -60,7 +61,9 @@ exports.startServer = (port, path, callback) => {
     }
 
     const drivers = {
-        httpServer: makeHttpServerDriver(),
+        httpServer: makeHttpServerDriver({
+            middlewares:[serveStatic('./public')]
+        }),
         log: makeLogDriver(),
         //socketServer: makeSocketIOServerDriver(io),
         //ev3dev: makeEv3devDriver(),

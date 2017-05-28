@@ -24,6 +24,7 @@
     "fluent-ffmpeg": "^2.1.2",
     "ngrok": "^2.2.9",
     "nodemon": "^1.11.0",
+    "serve-static": "^1.12.3",
     "socket.io": "^2.0.1",
     "switch-path": "^1.2.0",
     "xstream": "^10.7.0"
