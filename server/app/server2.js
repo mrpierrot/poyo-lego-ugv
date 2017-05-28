@@ -16,9 +16,10 @@ const xs = require('xstream').default,
     { makeSocketIOServerDriver } = require('cycle-socket.io-server'),
     { makeEv3devDriver } = require('cycle-ev3dev'),
     { makeFfmpegDriver } = require('./ffmpeg/driver'),
-    { makeLogDriver } = require('./log/driver'),
     { createMacOSCameraCommand, createRaspicamCommand } = require('./ffmpeg/preset');
 
+
+import Gateway from './components/Gateway';
 
 const httpsOptions = {
     key: fs.readFileSync(__dirname + '/..' + privateConf.ssl.key),
@@ -34,40 +35,21 @@ const beaconOptions = {
 
 const HTTP_PORT = 8080;
 
-
-
-
 exports.startServer = (port, path, callback) => {
 
     function main(sources) {
 
         const {httpServer} = sources;
-        const test$ = httpServer.get('/lol/:id/:name').map( ({req,res,params:{id,name}}) => {
-            return res.render(
-                <html>
-                    <head>
-                        <title>Pouet</title>
-                    </head>
-                    <body>
-                        id is {id} and name is {name} {req.method}
-                    </body>
-                </html>,
-                {beforeContent:"<!DOCTYPE html>"}
-            )
-        });
 
-        const test2$ = httpServer.match('/pouet').map( ({req,res}) => {
-            
-            return res.redirect('/lol/21/plouf');
-        });
+        const gateway = Gateway('/',{httpServer,props$:xs.of({localIpUrl:'test'})});
+
 
         const notFound$ = httpServer.notFound().map( ({req,res}) => {
             return res.text(`404 url '${req.url}' not found`,{statusCode:404});
         });
 
         const sinks = {
-            httpServer:xs.merge(test$,test2$,notFound$),
-           // log:httpServer.listen({port}).mapTo(`server started at ${port}`)
+            httpServer:xs.merge(gateway.httpServer,notFound$)
         }
 
         return sinks;
@@ -88,7 +70,6 @@ exports.startServer = (port, path, callback) => {
 
     const drivers = {
         httpServer: app.driver,
-        log: makeLogDriver(),
         //socketServer: makeSocketIOServerDriver(io),
         //ev3dev: makeEv3devDriver(),
         //ffmpeg: makeFfmpegDriver(createMacOSCameraCommand)
