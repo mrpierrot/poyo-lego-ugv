@@ -7,6 +7,8 @@ const eddystoneBeacon = require('eddystone-beacon');
 const privateConf = require('../private.json');
 const serveStatic = require('serve-static');
 import { html } from 'snabbdom-jsx';
+import { makeApp } from 'cyclic-http-server';
+//import { makeApp } from './http/driver';
 
 const xs = require('xstream').default,
     flattenConcurrently = require('xstream/extra/flattenConcurrently').default,
@@ -32,7 +34,7 @@ const beaconOptions = {
 
 const HTTP_PORT = 8080;
 
-import makeHttpServerDriver from './http/driver';
+
 
 
 exports.startServer = (port, path, callback) => {
@@ -65,16 +67,27 @@ exports.startServer = (port, path, callback) => {
 
         const sinks = {
             httpServer:xs.merge(test$,test2$,notFound$),
-            log:httpServer.listen({port}).mapTo(`server started at ${port}`)
+           // log:httpServer.listen({port}).mapTo(`server started at ${port}`)
         }
 
         return sinks;
     }
 
+    const app = makeApp({
+        middlewares:[serveStatic('./public')]
+    })
+
+    const https = require('https').createServer(httpsOptions, app.router);
+    const http = require('http').createServer(app.router);
+    const io = require('socket.io')(https);
+
+    https.listen(port, callback);
+    http.listen(HTTP_PORT, () => {
+        console.log("http started on " + HTTP_PORT);
+    });
+
     const drivers = {
-        httpServer: makeHttpServerDriver({
-            middlewares:[serveStatic('./public')]
-        }),
+        httpServer: app.driver,
         log: makeLogDriver(),
         //socketServer: makeSocketIOServerDriver(io),
         //ev3dev: makeEv3devDriver(),

@@ -19,6 +19,7 @@
     "consolidate": "^0.14.5",
     "cycle-ev3dev": "0.0.2",
     "cycle-socket.io-server": "0.0.4",
+    "cyclic-http-server": "^1.1.1",
     "eddystone-beacon": "^1.0.7",
     "express": "^4.15.2",
     "fluent-ffmpeg": "^2.1.2",
