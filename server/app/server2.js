@@ -6,6 +6,7 @@ const ngrok = require('./ngrok-promise');
 const eddystoneBeacon = require('eddystone-beacon');
 const privateConf = require('../private.json');
 const serveStatic = require('serve-static');
+import { html } from 'snabbdom-jsx';
 
 const xs = require('xstream').default,
     flattenConcurrently = require('xstream/extra/flattenConcurrently').default,
@@ -40,7 +41,17 @@ exports.startServer = (port, path, callback) => {
 
         const {httpServer} = sources;
         const test$ = httpServer.get('/lol/:id/:name').map( ({req,res,params:{id,name}}) => {
-            return res.text(`id is ${id} and name is ${name} ${req.method}`);
+            return res.render(
+                <html>
+                    <head>
+                        <title>Pouet</title>
+                    </head>
+                    <body>
+                        id is {id} and name is {name} {req.method}
+                    </body>
+                </html>,
+                {beforeContent:"<!DOCTYPE html>"}
+            )
         });
 
         const test2$ = httpServer.match('/pouet').map( ({req,res}) => {

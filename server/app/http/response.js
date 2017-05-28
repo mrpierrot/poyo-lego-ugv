@@ -1,5 +1,6 @@
 
-export function createResponseWrapper(res) {
+
+export function createResponseWrapper(res,render = (data) => data) {
 
     function _send(content, { statusCode = 200, headers = null, statusMessage = null } = {}) {
         return {
@@ -14,7 +15,7 @@ export function createResponseWrapper(res) {
     return {
         send: _send,
         json(content, { statusCode = 200, headers = null, statusMessage = null } = {}) {
-            return _send(content, {
+            return _send(JSON.stringify(content), {
                 statusCode,
                 headers: {
                     'Content-Type': 'application/json',
@@ -25,6 +26,16 @@ export function createResponseWrapper(res) {
         },
         html(content, { statusCode = 200, headers = null, statusMessage = null } = {}) {
             return _send(content, {
+                statusCode,
+                headers: {
+                    'Content-Type': 'text/html',
+                    ...headers
+                },
+                statusMessage
+            });
+        },
+        render(content, { beforeContent='',afterContent='',statusCode = 200, headers = null, statusMessage = null } = {}) {
+            return _send(beforeContent+render(content)+afterContent, {
                 statusCode,
                 headers: {
                     'Content-Type': 'text/html',

@@ -1,6 +1,7 @@
 import xs from 'xstream';
 import switchPath from 'switch-path';
 import _ from 'lodash';
+import vdom from './vdom';
 import { createResponseWrapper } from './response';
 
 function createHTTPListenerProducer(http, { port, hostname, backlog, options }) {
@@ -37,7 +38,7 @@ function applyMiddlewares(middlewares,req,res){
     })
 }
 
-export default function makeHttpServerDriver({ middlewares=[] } = {}) {
+export default function makeHttpServerDriver({ middlewares=[], render=vdom() } = {}) {
 
     return function httpServerDriver(input$) {
 
@@ -58,11 +59,11 @@ export default function makeHttpServerDriver({ middlewares=[] } = {}) {
         const http = require('http').createServer((req, res) => {
             applyMiddlewares(middlewares,req,res).then(()=>{
                  const { path, value } = switchPath(req.url, routes);
-                if (value && value(req, createResponseWrapper(res))) {
+                if (value && value(req, createResponseWrapper(res,render))) {
 
                 } else {
                     if (routes['*']) {
-                        routes['*'](req, createResponseWrapper(res));
+                        routes['*'](req, createResponseWrapper(res,render));
                     } else {
                         // 404
                         res.writeHead(404);
