@@ -7,19 +7,19 @@ import eddystoneBeacon from 'eddystone-beacon';
 import privateConf from '../private.json';
 import serveStatic from 'serve-static';
 import { html } from 'snabbdom-jsx';
-import { makeApp } from 'cyclic-http-server';
-//import { makeApp } from './http/driver';
+//import { makeApp } from 'cyclic-http-server';
+import { makeApp } from './http/driver';
 
 import xs from 'xstream'
-import flattenConcurrently from 'xstream/extra/flattenConcurrently';
 import { run } from '@cycle/run';
 import { makeSocketIOServerDriver } from 'cycle-socket.io-server';
 import { makeEv3devDriver } from 'cycle-ev3dev';
-import { makeFfmpegDriver } from'./ffmpeg/driver';
+import { makeFfmpegDriver } from './ffmpeg/driver';
 import { createMacOSCameraCommand, createRaspicamCommand } from './ffmpeg/preset';
 import { dnsDriver } from './utils';
 
 import Gateway from './components/Gateway';
+import App from './components/App';
 
 const httpsOptions = {
     key: fs.readFileSync(__dirname + '/..' + privateConf.ssl.key),
@@ -39,26 +39,35 @@ exports.startServer = (port, path, callback) => {
 
     function main(sources) {
 
-        const {router,dns} = sources;
+        const { router, dns } = sources;
 
-        const gateway = Gateway('/',{
-            router,
-            props$:dns.getCurrentAddress().map((address) => ({appPath:`https://${address}:${port}/app`})
-        )});
+        const rootPath$ = dns.getCurrentAddress().map((address) => `https://${address}:${port}` );
 
-        const notFound$ = router.notFound().map( ({req,res}) => {
-            return res.text(`404 url '${req.url}' not found`,{statusCode:404});
+        const gateway = Gateway('/', {
+            sources,
+            props$: rootPath$.map( rootPath => ({appPath:`${rootPath}/app`}))
+        });
+
+        const app = App('/app', {
+            sources,
+            props$: rootPath$.map( rootPath => ({socketUrl:rootPath}))
+        });
+
+        const notFound$ = router.notFound().map(({ req, res }) => {
+            return res.text(`404 url '${req.url}' not found`, { statusCode: 404 });
         });
 
         const sinks = {
-            router:xs.merge(gateway.router,notFound$)
+            router: xs.merge(gateway.router,app.router, notFound$),
+            socketServer:app.socketServer,
+            ev3dev: app.ev3dev
         }
 
         return sinks;
     }
 
     const app = makeApp({
-        middlewares:[serveStatic('./public')]
+        middlewares: [serveStatic('./public')]
     })
 
     const https = require('https').createServer(httpsOptions, app.router);
@@ -72,10 +81,10 @@ exports.startServer = (port, path, callback) => {
 
     const drivers = {
         router: app.driver,
-        dns:dnsDriver,
-        //socketServer: makeSocketIOServerDriver(io),
-        //ev3dev: makeEv3devDriver(),
-        //ffmpeg: makeFfmpegDriver(createMacOSCameraCommand)
+        dns: dnsDriver,
+        socketServer: makeSocketIOServerDriver(io),
+        ev3dev: makeEv3devDriver(),
+        ffmpeg: makeFfmpegDriver(createMacOSCameraCommand)
         //ffmpeg:makeFfmpegDriver(createRaspicamCommand)
     };
 

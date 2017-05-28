@@ -1,7 +1,7 @@
 import { html } from 'snabbdom-jsx';
 import xs from 'xstream';
 
-export function htmlBoilerplate(content, title, head) {
+export function htmlBoilerplate(content, title) {
     return (
         <html>
             <head>
@@ -9,7 +9,6 @@ export function htmlBoilerplate(content, title, head) {
                 <meta charset="utf-8" />
                 <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi"/>
                 <link rel="stylesheet" href="/app.css" />
-                {head}
             </head>
             <body>
                 {content}
