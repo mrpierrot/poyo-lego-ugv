@@ -1,23 +1,23 @@
-const express = require('express');
-const fs = require('fs');
+
+import fs from 'fs';
 const { makeController } = require('./controller');
-const cons = require('consolidate');
-const ngrok = require('./ngrok-promise');
-const eddystoneBeacon = require('eddystone-beacon');
-const privateConf = require('../private.json');
-const serveStatic = require('serve-static');
+
+import ngrok from './ngrok-promise';
+import eddystoneBeacon from 'eddystone-beacon';
+import privateConf from '../private.json';
+import serveStatic from 'serve-static';
 import { html } from 'snabbdom-jsx';
 import { makeApp } from 'cyclic-http-server';
 //import { makeApp } from './http/driver';
 
-const xs = require('xstream').default,
-    flattenConcurrently = require('xstream/extra/flattenConcurrently').default,
-    { run } = require('@cycle/run'),
-    { makeSocketIOServerDriver } = require('cycle-socket.io-server'),
-    { makeEv3devDriver } = require('cycle-ev3dev'),
-    { makeFfmpegDriver } = require('./ffmpeg/driver'),
-    { createMacOSCameraCommand, createRaspicamCommand } = require('./ffmpeg/preset');
-
+import xs from 'xstream'
+import flattenConcurrently from 'xstream/extra/flattenConcurrently';
+import { run } from '@cycle/run';
+import { makeSocketIOServerDriver } from 'cycle-socket.io-server';
+import { makeEv3devDriver } from 'cycle-ev3dev';
+import { makeFfmpegDriver } from'./ffmpeg/driver';
+import { createMacOSCameraCommand, createRaspicamCommand } from './ffmpeg/preset';
+import { dnsDriver } from './utils';
 
 import Gateway from './components/Gateway';
 
@@ -39,17 +39,19 @@ exports.startServer = (port, path, callback) => {
 
     function main(sources) {
 
-        const {httpServer} = sources;
+        const {router,dns} = sources;
 
-        const gateway = Gateway('/',{httpServer,props$:xs.of({localIpUrl:'test'})});
+        const gateway = Gateway('/',{
+            router,
+            props$:dns.getCurrentAddress().map((address) => ({appPath:`https://${address}:${port}/app`})
+        )});
 
-
-        const notFound$ = httpServer.notFound().map( ({req,res}) => {
+        const notFound$ = router.notFound().map( ({req,res}) => {
             return res.text(`404 url '${req.url}' not found`,{statusCode:404});
         });
 
         const sinks = {
-            httpServer:xs.merge(gateway.httpServer,notFound$)
+            router:xs.merge(gateway.router,notFound$)
         }
 
         return sinks;
@@ -69,7 +71,8 @@ exports.startServer = (port, path, callback) => {
     });
 
     const drivers = {
-        httpServer: app.driver,
+        router: app.driver,
+        dns:dnsDriver,
         //socketServer: makeSocketIOServerDriver(io),
         //ev3dev: makeEv3devDriver(),
         //ffmpeg: makeFfmpegDriver(createMacOSCameraCommand)

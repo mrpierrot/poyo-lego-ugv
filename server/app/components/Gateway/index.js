@@ -4,37 +4,37 @@ import { html } from 'snabbdom-jsx';
 import {htmlBoilerplate} from '../../utils';
 
 
-function intent(path,httpServer){
-    return  httpServer.get(path);
+function intent(path,router){
+    return  router.get(path);
 }
 
 function model(action$,props$){
     return props$.map(
             (props) => action$.map(
-                ({res}) => ({localIpUrl:props.localIpUrl,res})
+                ({res}) => ({appPath:props.appPath,res})
             )
         ).flatten().remember();
 }
 
 function view(model$){
-    return model$.map(({localIpUrl,res})=>
+    return model$.map(({appPath,res})=>
         res.render(htmlBoilerplate(
             <div>
-                <a href={`${localIpUrl}/app`}>GO</a>
+                <a href={appPath}>GO</a>
             </div>
             ),{beforeContent:"<!DOCTYPE html>"}
         )
     );
 }
 
-export default function Gateway(path,{httpServer,props$=xs.of({localIpUrl:null})}){
+export default function Gateway(path,{router,props$=xs.of({appPath:null})}){
 
-    const action$ = intent(path,httpServer);
+    const action$ = intent(path,router);
     const model$ = model(action$,props$);
     const view$ = view(model$);
 
     const sinks = {
-        httpServer:view$ 
+        router:view$ 
     }
     return sinks;
 }
