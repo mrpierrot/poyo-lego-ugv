@@ -1,11 +1,24 @@
-const express = require('express');
-const fs = require('fs');
-const { makeController } = require('./controller');
-const cons = require('consolidate');
-const ngrok = require('./ngrok-promise');
-const eddystoneBeacon = require('eddystone-beacon');
-const privateConf = require('../private.json');
 
+import fs from 'fs';
+const { makeController } = require('./controller');
+
+import ngrok from './ngrok-promise';
+import eddystoneBeacon from 'eddystone-beacon';
+import privateConf from '../private.json';
+import serveStatic from 'serve-static';
+import { html } from 'snabbdom-jsx';
+import { makeApp } from 'cyclic-http-server';
+
+import xs from 'xstream'
+import { run } from '@cycle/run';
+import { makeSocketIOServerDriver } from 'cycle-socket.io-server';
+import { makeEv3devDriver } from 'cycle-ev3dev';
+import { makeFfmpegDriver } from './ffmpeg/driver';
+import { createMacOSCameraCommand, createRaspicamCommand } from './ffmpeg/preset';
+import { dnsDriver } from './utils';
+
+import Gateway from './components/Gateway';
+import App from './components/App';
 
 const httpsOptions = {
     key: fs.readFileSync(__dirname + '/..' + privateConf.ssl.key),
@@ -22,51 +35,56 @@ const beaconOptions = {
 const HTTP_PORT = 8080;
 
 exports.startServer = (port, path, callback) => {
-    require('dns').lookup(require('os').hostname(), function (err, add, fam) {
 
-        const localIPUrl = `https://${add}:${port}`;
-        const app = express();
-        const https = require('https').createServer(httpsOptions, app);
-        const http = require('http').createServer(app);
-        const io = require('socket.io')(https);
-        const publicPath = __dirname + '/../' + path;
+    function main(sources) {
 
-        app.use(express.static(publicPath));
-        app.get('/app', function (req, res) {
-            console.log("plop")
-            cons.handlebars(__dirname + '/../templates/app.html', { socketUrl: localIPUrl })
-                .then(function (html) {
-                    res.send(html);
-                })
-                .catch(function (err) {
-                    throw err;
-                });
+        const { router, dns } = sources;
+
+        const rootPath$ = dns.getCurrentAddress().map((address) => `https://${address}:${port}` );
+
+        const gateway = Gateway('/', {
+            sources,
+            props$: rootPath$.map( rootPath => ({appPath:`${rootPath}/app`}))
         });
 
-        app.get('/', function (req, res) {
-            cons.handlebars(__dirname + '/../templates/index.html', { localIPUrl })
-                .then(function (html) {
-                    res.send(html);
-                })
-                .catch(function (err) {
-                    throw err;
-                });
+        const app = App('/app', {
+            sources,
+            props$: rootPath$.map( rootPath => ({socketUrl:rootPath}))
         });
 
-        https.listen(port, callback);
-        http.listen(HTTP_PORT, () => {
-            console.log("http started on " + HTTP_PORT);
+        const notFound$ = router.notFound().map(({ req, res }) => {
+            return res.text(`404 url '${req.url}' not found`, { statusCode: 404 });
         });
 
-        makeController(io);
+        const sinks = {
+            router: xs.merge(gateway.router,app.router, notFound$),
+            socketServer:app.socketServer,
+            ev3dev: app.ev3dev
+        }
 
-        ngrok.connect(Object.assign({ addr: HTTP_PORT }, privateConf.ngrok))
-            .then(url => {
-                console.log("App available on " + url);
-                eddystoneBeacon.advertiseUrl(url, [beaconOptions]);
-            }).catch(err => {
-                console.error(err);
-            }) 
+        return sinks;
+    }
+
+    const app = makeApp({
+        middlewares: [serveStatic('./public')]
+    })
+
+    const https = require('https').createServer(httpsOptions, app.router);
+    const http = require('http').createServer(app.router);
+    const io = require('socket.io')(https);
+
+    https.listen(port, callback);
+    http.listen(HTTP_PORT, () => {
+        console.log("http started on " + HTTP_PORT);
+    });
+
+    // TODO integrate Ngrok in cycle.js loop
+    ngrok.connect(Object.assign({ addr: HTTP_PORT }, privateConf.ngrok))
+    .then(url => {
+        console.log("App available on " + url);
+        eddystoneBeacon.advertiseUrl(url, [beaconOptions]);
+    }).catch(err => {
+        console.error(err);
     })
 
     /**
@@ -74,7 +92,7 @@ exports.startServer = (port, path, callback) => {
      */
     process.once('SIGUSR2', function () {
         ngrok.disconnect()
-            .then(() => ngrok.kill()) 
+            .then(() => ngrok.kill())
             .then(()=>{
             console.log('ngrok cleaned up'); 
             process.kill(process.pid, 'SIGUSR2');
@@ -82,11 +100,17 @@ exports.startServer = (port, path, callback) => {
             console.error(err);
             process.kill(process.pid, 'SIGUSR2'); 
         })
-    });
-};
+    }); 
 
+    const drivers = {
+        router: app.driver,
+        dns: dnsDriver,
+        socketServer: makeSocketIOServerDriver(io),
+        ev3dev: makeEv3devDriver(),
+        ffmpeg: makeFfmpegDriver(createMacOSCameraCommand)
+        //ffmpeg:makeFfmpegDriver(createRaspicamCommand)
+    };
 
+    run(main, drivers);
 
-
-
-
+}

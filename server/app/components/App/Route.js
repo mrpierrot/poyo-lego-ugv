@@ -1,10 +1,7 @@
 
 import xs from 'xstream';
-
-import Controls from './Controls';
-import Camera from './Camera';
-import Route from './Route';
-
+import { html } from 'snabbdom-jsx';
+import { htmlBoilerplate } from '../../utils';
 
 function intent(path, router) {
     return router.get(path);
@@ -32,18 +29,16 @@ function view(model$) {
     );
 }
 
-export default function App(path, { sources, props$ = xs.of({ appPath: null }) }) {
+export default function Route(path, sources) {
 
-    const { socketServer, ffmpeg, router } = sources;
+    const { router, props$ = xs.of({ appPath: null }) } = sources;
 
-    const route = Route(path, { router, props$ });
-    const controls = Controls({ socketServer });
-    const camera = Camera({ socketServer, ffmpeg });
+    const action$ = intent(path, router);
+    const model$ = model(action$, props$);
+    const view$ = view(model$);
 
     const sinks = {
-        router: route.router,
-        socketServer: camera.socketServer,
-        ev3dev: controls.ev3dev
+        router: view$,
     }
     return sinks;
 }
