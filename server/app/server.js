@@ -1,19 +1,17 @@
 
+import xs from 'xstream'
 import fs from 'fs';
-const { makeController } = require('./controller');
-
 import ngrok from './ngrok';
 import eddystoneBeacon from 'eddystone-beacon';
 import privateConf from '../private.json';
 import serveStatic from 'serve-static';
 import { html } from 'snabbdom-jsx';
-import { makeApp } from 'cyclic-http-server';
-import xs from 'xstream'
 import { run } from '@cycle/run';
 import { makeSocketIOServerDriver } from 'cycle-socket.io-server';
 import { makeEv3devDriver } from 'cycle-ev3dev';
 import { makeFfmpegDriver } from './ffmpeg/driver';
 import { makeNgrokDriver } from './ngrok/driver';
+import { makeApp } from 'cyclic-http-server';
 import { createMacOSCameraCommand, createRaspicamCommand } from './ffmpeg/preset';
 import { dnsDriver, listen, processDriver, makeEddystoneBeaconDriver } from './utils';
 
