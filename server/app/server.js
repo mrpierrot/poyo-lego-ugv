@@ -15,7 +15,7 @@ import { makeSocketIOServerDriver } from 'cycle-socket.io-server';
 import { makeEv3devDriver } from 'cycle-ev3dev';
 import { makeFfmpegDriver } from './ffmpeg/driver';
 import { createMacOSCameraCommand, createRaspicamCommand } from './ffmpeg/preset';
-import { dnsDriver } from './utils';
+import { dnsDriver,listen } from './utils';
 
 import Gateway from './components/Gateway';
 import App from './components/App';
@@ -73,10 +73,11 @@ exports.startServer = (port, path, callback) => {
     const http = require('http').createServer(app.router);
     const io = require('socket.io')(https);
 
-    https.listen(port, callback);
-    http.listen(HTTP_PORT, () => {
-        console.log("http started on " + HTTP_PORT);
-    });
+    listen(http,HTTP_PORT)
+    .then(listen(https,port))
+    .then(() => {
+        callback({httpPort:HTTP_PORT,httpsPort:port});
+    })
 
     // TODO integrate Ngrok in cycle.js loop
     ngrok.connect(Object.assign({ addr: HTTP_PORT }, privateConf.ngrok))

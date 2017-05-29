@@ -39,3 +39,9 @@ export function dnsDriver(){
         }
     }
 }
+
+export function listen(server,port){
+    return new Promise((resolve,reject)=>{
+        server.listen(port,resolve);
+    });
+}
