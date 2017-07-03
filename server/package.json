@@ -18,7 +18,9 @@
     "@cycle/time": "^0.8.0",
     "consolidate": "^0.14.5",
     "cycle-ev3dev": "0.0.2",
+    "cycle-node-http-server": "^2.0.0",
     "cycle-socket.io-server": "0.0.4",
+    "cycle-ws": "^1.0.0",
     "cyclic-http-server": "^1.1.1",
     "eddystone-beacon": "^1.0.7",
     "express": "^4.15.2",
@@ -30,6 +32,7 @@
     "snabbdom-to-html": "^3.1.1",
     "socket.io": "^2.0.1",
     "switch-path": "^1.2.0",
+    "ws": "^3.0.0",
     "xstream": "^10.7.0"
   },
   "devDependencies": {

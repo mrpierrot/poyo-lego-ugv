@@ -4,14 +4,14 @@ import { html } from 'snabbdom-jsx';
 import { htmlBoilerplate } from '../../utils';
 
 
-function intent(path, router) {
-    return router.get(path);
+function intent(request$) {
+    return request$.map( req => req.response);
 }
 
 function model(action$, props$) {
     return props$.map(
         (props) => action$.map(
-            ({ res }) => ({ appPath: props.appPath, res })
+            (res) => ({ appPath: props.appPath, res })
         )
     ).flatten();
 }
@@ -27,15 +27,15 @@ function view(model$) {
     );
 }
 
-export default function Gateway(path, { sources, props$ = xs.of({ appPath: null }) }) {
+export default function Gateway(sources) {
 
-    const {router} = sources;
-    const action$ = intent(path, router);
+    const { request$, props$ = xs.of({ appPath: null }) } = sources;
+    const action$ = intent(request$);
     const model$ = model(action$, props$);
     const view$ = view(model$);
 
     const sinks = {
-        router: view$
+        httpResponse: view$
     }
     return sinks;
 }

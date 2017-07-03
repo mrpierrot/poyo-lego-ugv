@@ -1,6 +1,6 @@
 {
   "name": "lego-ugv",
-  "version": "0.0.1",
+  "version": "1.0.1",
   "description": "A Unmanned Ground Vehicule in Lego Mindstorm and BrickPI",
   "main": "index.js",
   "scripts": {

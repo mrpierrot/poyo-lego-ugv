@@ -36,19 +36,19 @@ function direction(value) {
 
 export default function Controls(sources) {
 
-    const { socketServer } = sources;
-    const connection$ = socketServer.connect();
+    const { wsConnection$ } = sources;
 
-    const ev3devActions$ = connection$.map(socket => {
-        const disconnection$ = socket.events('disconnect');
+    const ev3devActions$ = wsConnection$.map(({socket}) => {
+        const disconnection$ = socket.events('close');
+        const message$ = socket.events('message');
         return xs.merge(
-            socket.events('speed').map((event) => speed(event.data.value)),
-            socket.events('direction').map((event) => direction(event.data.value))
+            message$.filter( o => o.name === 'speed').map((event) => speed(event.data.value)),
+            message$.filter( o => o.name === 'direction').map((event) => direction(event.data.value))
         ).endWhen(disconnection$);
     }).compose(flattenConcurrently);
 
     const sinks = {
-        ev3dev: ev3devActions$
+        ev3devOutput: ev3devActions$
     }
 
     return sinks;

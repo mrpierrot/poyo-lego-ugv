@@ -1,6 +1,17 @@
 import { html } from 'snabbdom-jsx';
 import xs from 'xstream';
 import eddystoneBeacon from 'eddystone-beacon';
+import snabbdomInit from 'snabbdom-to-html/init';
+import snabbdomModules from 'snabbdom-to-html/modules';
+
+export function vdom(modules = [
+    snabbdomModules.class,
+    snabbdomModules.props,
+    snabbdomModules.attributes,
+    snabbdomModules.style
+]) {
+    return snabbdomInit(modules);
+}
 
 export function htmlBoilerplate(content, title) {
     return (
@@ -65,20 +76,14 @@ function createEmitterOnceProducer(target, name) {
 
     return {
         start(listener) {
-            eventListener = (o) => { 
-                listener.next(o); 
+            eventListener = (o) => {
+                listener.next(o);
                 listener.complete();
-             };
+            };
             target.once(name, eventListener);
         },
-        stop(){}
+        stop() { }
     }
-}
-
-
-export function fromEvent(type, funcName = 'on') {
-
-
 }
 
 export function processDriver(actions$) {
@@ -88,7 +93,7 @@ export function processDriver(actions$) {
             process[outgoing.call].apply(process, outgoing.args);
         },
         error: () => { },
-        complete: () => { }, 
+        complete: () => { },
     });
 
     return {
@@ -119,9 +124,4 @@ export function makeEddystoneBeaconDriver() {
     }
 }
 
-export function listen(server, port) {
-    return new Promise((resolve, reject) => {
-        server.listen(port, resolve);
-    });
-}
 
