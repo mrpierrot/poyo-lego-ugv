@@ -48,13 +48,16 @@ export default function init({ socketUrl }) {
     const socket = socketClient.select('ws');
 
 
+
     const cameraPowerToggleAction$ = DOM.select('.action-camera-power-toggle').events('change').map(e => e.target.checked);
     const fullscreenToggleAction$ = DOM.select('.action-fullscreen-toggle').events('change').map(e => e.target.checked);
     const fullscreenChange$ = fullscreen.change();
     const ioConnect$ = socket.events('open').debug('open').mapTo({name:'open'});
     const ioDisconnect$ = socket.events('close').mapTo({name:'close'});
-    const cameraData$ = socket.events('message').filter(m => o.name ==='camera:data');
-    const cameraState$ = socket.events('message').filter(m => o.name === 'camera:state').startWith({name:'camera:state',data:'stopped'});
+
+    const message$ = socket.events('message');
+    const cameraData$ = message$.filter(o => o.data.name ==='camera:data').map( o => Float32Array.from(o.data.data.data));
+    const cameraState$ = message$.filter(o => o.data.name === 'camera:state').startWith({name:'camera:state',data:'stopped'});
     const videoPlayer$ = jsmpeg();
 
     const ioStatus$ = xs.merge(ioConnect$, ioDisconnect$).startWith({ name: 'close' });
@@ -71,7 +74,7 @@ export default function init({ socketUrl }) {
 
     const cameraPowerToggle$ = socket.events('open').map( 
       ({socket}) => cameraPowerToggleAction$.map(
-        checked => socket.send({name: checked ? 'camera:start':'camera:stop'})
+        checked => socket.json({name: checked ? 'camera:start':'camera:stop'})
       )
     ).flatten().debug();
 

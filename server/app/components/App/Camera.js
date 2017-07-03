@@ -14,12 +14,12 @@ export default function Camera(sources) {
         const cameraStart$ = message$.filter(o => o.data.name === 'camera:start').endWhen(disconnection$).debug('camera:start');
 
         return xs.merge(
-            xs.of(socket.send({name: 'camera:state', data: 'stopped' })),
-            cameraStart$.mapTo(socket.send({ name: 'camera:state', data: 'streaming' })),
-            cameraStop$.mapTo(socket.send({ name: 'camera:state', data: 'stopped' })),
+            xs.of(socket.json({name: 'camera:state', data: 'stopped' })),
+            cameraStart$.mapTo(socket.json({ name: 'camera:state', data: 'streaming' })),
+            cameraStop$.mapTo(socket.json({ name: 'camera:state', data: 'stopped' })),
             cameraStart$.map(() => camera$.endWhen(cameraStop$))
                 .flatten()
-                .map( data => socket.send({
+                .map( data => socket.json({
                     name: 'camera:data',
                     data
                 }))

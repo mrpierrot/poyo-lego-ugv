@@ -20,7 +20,7 @@
     "cycle-ev3dev": "0.0.2",
     "cycle-node-http-server": "^2.0.0",
     "cycle-socket.io-server": "0.0.4",
-    "cycle-ws": "^1.0.0",
+    "cycle-ws": "1.1.3",
     "cyclic-http-server": "^1.1.1",
     "eddystone-beacon": "^1.0.7",
     "express": "^4.15.2",
