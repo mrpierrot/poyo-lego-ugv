@@ -84,7 +84,7 @@ export default function init({ socketUrl }) {
       ({ socket }) => cameraPowerToggleAction$.map(
         checked => socket.send(checked ? 'camera:start' : 'camera:stop')
       )
-    ).flatten().debug('lol');
+    ).flatten();
 
     const sinks = {
       DOM: xs.combine(leftStick.DOM, rightStick.DOM, fullscreenChange$, videoPlayer$, cameraState$, ioStatus$)
