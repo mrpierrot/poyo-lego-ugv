@@ -7,11 +7,11 @@ import Route from './Route';
 
 export default function App(sources) {
 
-    const { wsConnection$, ffmpeg, request$, props$ = xs.of({ appPath: null }) } = sources;
+    const { ioConnection$, ffmpeg, request$, props$ = xs.of({ appPath: null }) } = sources;
 
     const route = Route({request$, props$});
-    const controls = Controls({ wsConnection$ });
-    const camera = Camera({ wsConnection$, ffmpeg });
+    const controls = Controls({ ioConnection$ });
+    const camera = Camera({ ioConnection$, ffmpeg });
 
     const sinks = {
         httpResponse: route.httpResponse,

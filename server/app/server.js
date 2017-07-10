@@ -5,7 +5,7 @@ import ngrok from './ngrok';
 import eddystoneBeacon from 'eddystone-beacon';
 import privateConf from '../private.json';
 import serveStatic from 'serve-static';
-import Websocket from 'ws';
+import io from 'socket.io';
 import { html } from 'snabbdom-jsx';
 import { run } from '@cycle/run';
 import { makeLogDriver } from './log';
@@ -14,7 +14,7 @@ import { makeFfmpegDriver } from './ffmpeg/driver';
 import { makeNgrokDriver } from './ngrok/driver';
 import { makeApp } from 'cyclic-http-server';
 import { makeHttpServerDriver, Router } from 'cycle-node-http-server';
-import { makeWSServerDriver } from 'cycle-ws';
+import { makeNetDriver, ioServer, httpServer, httpRouter } from 'cycle-net';
 import { createMacOSCameraCommand, createRaspicamCommand } from './ffmpeg/preset';
 import { dnsDriver, listen, processDriver, makeEddystoneBeaconDriver, vdom } from './utils';
 import flattenConcurrently from 'xstream/extra/flattenConcurrently';
@@ -23,7 +23,7 @@ import Gateway from './components/Gateway';
 import App from './components/App';
 import NotFound from './components/NotFound';
 
-const securedOptions = {
+const securedConfig = {
     key: fs.readFileSync(__dirname + '/..' + privateConf.ssl.key),
     cert: fs.readFileSync(__dirname + '/..' + privateConf.ssl.cert)
 };
@@ -45,49 +45,53 @@ exports.startServer = (port, path, callback) => {
 
         const http = httpServer.select('http');
         const https = httpServer.select('https');
-        const wss = socketServer.select('wss');
+        const io = socketServer.select('io');
 
         const httpServerReady$ = http.events('ready');
         const httpsServerReady$ = https.events('ready');
         const httpServerRequest$ = http.events('request');
         const httpsServerRequest$ = https.events('request');
-        const wsConnection$ = wss.events('connection');
+        const ioConnection$ = io.events('connection');
         const serverRequest$ = xs.merge(httpServerRequest$, httpsServerRequest$);
 
         const httpCreate$ = xs.of({
             id: 'http',
             action: 'create',
-            port: HTTP_PORT
+            config:{
+                port: HTTP_PORT
+            }
         });
 
         const httpsCreate$ = xs.of({
             id: 'https',
             action: 'create',
-            port: port,
             secured: true,
-            securedOptions
+            securedConfig,
+            config: {
+                port: port,
+            }
         });
 
-       const socketServerCreate$ = httpsServerReady$.map(({ instance }) => ({
-            id: 'wss',
+        const socketServerCreate$ = httpsServerReady$.map(({ server }) => ({
+            id: 'io',
             action: 'create',
             config: {
-                server: instance
+                server: server
             }
         }));
 
         const httpRootPath$ = dns.getCurrentAddress().map((address) => `https://${address}:${port}`);
-        const wsRootPath$ = dns.getCurrentAddress().map((address) => `wss://${address}:${port}`);
+        const wsRootPath$ = dns.getCurrentAddress().map((address) => `https://${address}:${port}`);
 
-        const router$ = Router({ ...sources, request$: serverRequest$ }, {
+        const router$ = httpRouter({ ...sources, request$: serverRequest$ }, {
             '/': sources => Gateway({ ...sources, props$: httpRootPath$.map(rootPath => ({ appPath: `${rootPath}/app` })) }),
-            '/app': sources => App({ ...sources, wsConnection$, props$: wsRootPath$.map(rootPath => ({ socketUrl: rootPath })) }),
+            '/app': sources => App({ ...sources, ioConnection$, props$: wsRootPath$.map(rootPath => ({ socketUrl: rootPath })) }),
             '*': NotFound
         });
 
-        const httpResponse$ = router$.map(c => c.httpResponse).filter( o => !!o).compose(flattenConcurrently);
-        const socketResponse$ = router$.map(c => c.socketResponse).filter( o => !!o).compose(flattenConcurrently);
-        const ev3devOutput$ = router$.map(c => c.ev3devOutput).filter( o => !!o).compose(flattenConcurrently);
+        const httpResponse$ = router$.map(c => c.httpResponse).filter(o => !!o).compose(flattenConcurrently);
+        const socketResponse$ = router$.map(c => c.socketResponse).filter(o => !!o).compose(flattenConcurrently);
+        const ev3devOutput$ = router$.map(c => c.ev3devOutput).filter(o => !!o).compose(flattenConcurrently);
 
         const eddystoneAdvertiseUrl$ = ngrok.connect({ addr: HTTP_PORT, ...privateConf.ngrok }).map(url => ({
             call: 'advertiseUrl',
@@ -103,10 +107,10 @@ exports.startServer = (port, path, callback) => {
 
         const sinks = {
             log: xs.merge(
-                httpCreate$.map(o => `create '${o.id}' at ${o.port}`),
-                httpsCreate$.map(o => `create '${o.id}' at ${o.port}`),
-                httpServerReady$.map(o => `'${o.instanceId}' ready to listen`),
-                httpsServerReady$.map(o => `'${o.instanceId}' ready to listen`)
+                httpCreate$.map(o => `create '${o.id}' at ${o.config.port}`),
+                httpsCreate$.map(o => `create '${o.id}' at ${o.config.port}`),
+                httpServerReady$.map(o => `'${o.id}' ready to listen`),
+                httpsServerReady$.map(o => `'${o.id}' ready to listen`)
             ),
             httpServer: xs.merge(httpCreate$, httpsCreate$, httpResponse$),
             socketServer: xs.merge(socketServerCreate$, socketResponse$),
@@ -121,8 +125,8 @@ exports.startServer = (port, path, callback) => {
     const drivers = {
         log: makeLogDriver(),
         dns: dnsDriver,
-        httpServer: makeHttpServerDriver({ middlewares: [serveStatic('./public')], render: vdom() }),
-        socketServer: makeWSServerDriver(Websocket.Server),
+        httpServer: makeNetDriver(httpServer({ middlewares: [serveStatic('./public')], render: vdom() })),
+        socketServer: makeNetDriver(ioServer(io)),
         proc: processDriver,
         ngrok: makeNgrokDriver(),
         eddystone: makeEddystoneBeaconDriver(),

@@ -2,11 +2,12 @@ import xs from 'xstream';
 import { run } from '@cycle/run';
 import { makeDOMDriver } from '@cycle/dom';
 import isolate from '@cycle/isolate';
+import io from 'socket.io-client';
 
 import { html } from 'snabbdom-jsx';
 import { Stick, VERTICAL_STICK_MODE, HORIZONTAL_STICK_MODE } from 'components/Stick';
 import { makeFullscreenDriver } from 'drivers/fullscreen';
-import { makeWSClientDriver } from 'cycle-ws';
+import { makeNetDriver, ioClient } from 'cycle-net';
 import { makeJSMpegDriver } from 'drivers/jsmpeg';
 import { timeDriver } from '@cycle/time';
 import dropRepeats from 'xstream/extra/dropRepeats'
@@ -40,27 +41,34 @@ export default function init({ socketUrl }) {
     const { DOM, socketClient, fullscreen, jsmpeg, Time } = sources;
 
     const socketCreate$ = xs.of({
-      id: 'ws',
+      id: 'io',
       action: 'create',
       url: socketUrl
-    }) 
+    })
 
-    const socket = socketClient.select('ws');
+    const socket = socketClient.select('io');
 
 
 
     const cameraPowerToggleAction$ = DOM.select('.action-camera-power-toggle').events('change').map(e => e.target.checked);
     const fullscreenToggleAction$ = DOM.select('.action-fullscreen-toggle').events('change').map(e => e.target.checked);
     const fullscreenChange$ = fullscreen.change();
-    const ioConnect$ = socket.events('open').debug('open').mapTo({name:'open'});
-    const ioDisconnect$ = socket.events('close').mapTo({name:'close'});
+    const ioReady$ = socket.events('ready');
 
-    const message$ = socket.events('message');
-    const cameraData$ = message$.filter(o => o.data.name ==='camera:data').map( o => Float32Array.from(o.data.data.data));
-    const cameraState$ = message$.filter(o => o.data.name === 'camera:state').startWith({name:'camera:state',data:'stopped'});
+    function socketEvent(name) {
+      return ioReady$.map(({ socket }) => socket.events(name)).flatten()
+    }
+
+    const ioConnect$ = socketEvent('connect');
+    const ioDisconnect$ = socketEvent('disconnect');
+    const ioConnectStatus$ = ioConnect$.mapTo({ name: 'connect' });
+    const ioDisconnectStatus$ = ioDisconnect$.mapTo({ name: 'disconnect' });
+
+    const cameraData$ = socketEvent('camera:data').map(o => o.data);
+    const cameraState$ = socketEvent('camera:state').startWith({ name: 'camera:state', data: 'stopped' });
     const videoPlayer$ = jsmpeg();
 
-    const ioStatus$ = xs.merge(ioConnect$, ioDisconnect$).startWith({ name: 'close' });
+    const ioStatus$ = xs.merge(ioConnectStatus$, ioDisconnectStatus$).startWith({ name: 'disconnect' });
 
     const leftStick = isolate(Stick, { DOM: 'left-stick' })({ DOM, props$: xs.of({ mode: HORIZONTAL_STICK_MODE }) });
     const rightStick = isolate(Stick, { DOM: 'right-stick' })({ DOM, props$: xs.of({ mode: VERTICAL_STICK_MODE }) });
@@ -72,11 +80,11 @@ export default function init({ socketUrl }) {
       action: 'toggle'
     }));
 
-    const cameraPowerToggle$ = socket.events('open').map( 
-      ({socket}) => cameraPowerToggleAction$.map(
-        checked => socket.json({name: checked ? 'camera:start':'camera:stop'})
+    const cameraPowerToggle$ = ioReady$.map(
+      ({ socket }) => cameraPowerToggleAction$.map(
+        checked => socket.send(checked ? 'camera:start' : 'camera:stop')
       )
-    ).flatten().debug();
+    ).flatten().debug('lol');
 
     const sinks = {
       DOM: xs.combine(leftStick.DOM, rightStick.DOM, fullscreenChange$, videoPlayer$, cameraState$, ioStatus$)
@@ -116,7 +124,7 @@ export default function init({ socketUrl }) {
   const drivers = {
     DOM: makeDOMDriver('#app'),
     Time: timeDriver,
-    socketClient: makeWSClientDriver(WebSocket),
+    socketClient: makeNetDriver(ioClient(io)),
     fullscreen: makeFullscreenDriver(),
     jsmpeg: makeJSMpegDriver()
   };
