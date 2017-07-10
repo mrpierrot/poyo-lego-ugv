@@ -25,14 +25,7 @@ function formatIOGet(socketIO, name) {
   return socketIO.get(name).map(data => ({ name: name, data }));
 }
 
-function stickStreamToSocketStream(Time, input$, type, period = 60) {
-  return input$.compose(Time.throttle(period))
-    .compose(dropRepeats((a, b) => a.rate == b.rate))
-    .map((data) => ({
-      messageType: type,
-      message: { value: data.rate },
-    }));
-}
+
 
 export default function init({ socketUrl }) {
 
@@ -59,6 +52,14 @@ export default function init({ socketUrl }) {
       return ioReady$.map(({ socket }) => socket.events(name)).flatten()
     }
 
+    function stickStreamToSocketStream(ioReady$,input$, type, period = 60) {
+      return ioReady$.map( 
+          ({socket}) =>input$.compose(Time.throttle(period))
+            .compose(dropRepeats((a, b) => a.rate == b.rate))
+            .map(data => socket.send(type,{ value: data.rate }))
+        ).flatten();
+    }
+
     const ioConnect$ = socketEvent('connect');
     const ioDisconnect$ = socketEvent('disconnect');
     const ioConnectStatus$ = ioConnect$.mapTo({ name: 'connect' });
@@ -73,8 +74,8 @@ export default function init({ socketUrl }) {
     const leftStick = isolate(Stick, { DOM: 'left-stick' })({ DOM, props$: xs.of({ mode: HORIZONTAL_STICK_MODE }) });
     const rightStick = isolate(Stick, { DOM: 'right-stick' })({ DOM, props$: xs.of({ mode: VERTICAL_STICK_MODE }) });
 
-    const directionMessage$ = stickStreamToSocketStream(Time, leftStick.value, 'direction');
-    const speedMessage$ = stickStreamToSocketStream(Time, rightStick.value, 'speed');
+    const directionMessage$ = stickStreamToSocketStream(ioReady$, leftStick.value, 'direction');
+    const speedMessage$ = stickStreamToSocketStream(ioReady$, rightStick.value, 'speed');
 
     const fullscreen$ = fullscreenToggleAction$.map(() => ({
       action: 'toggle'
