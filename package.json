@@ -10,7 +10,8 @@
     "sync:build": "npm --prefix ./webapp run build && npm --prefix ./server run build  && npm run sync",
     "sync": "./bin/sync.sh once ./server robot@ev3dev.local .",
     "watch": "./bin/sync.sh watch ./server robot@ev3dev.local .",
-    "ssh-close": "./bin/sync.sh close robot@ev3dev.local"
+    "ssh-close": "./bin/sync.sh close robot@ev3dev.local",
+    "install:all": "npm --prefix ./webapp install && npm --prefix ./server install && npm install"
   },
   "keywords": [
     "lego",

@@ -43,26 +43,16 @@ exports.startServer = (port, path, callback) => {
 
         const { router, dns, ngrok, proc, httpServer, socketServer } = sources;
 
-        const http = httpServer.select('http');
         const https = httpServer.select('https');
         const io = socketServer.select('io');
 
-        const httpServerReady$ = http.events('ready');
         const httpsServerReady$ = https.events('ready');
-        const httpServerRequest$ = http.events('request');
         const httpsServerRequest$ = https.events('request');
         const ioConnection$ = io.events('connection');
-        const serverRequest$ = xs.merge(httpServerRequest$, httpsServerRequest$);
+        const serverRequest$ =  httpsServerRequest$;
+        const killApp$ = proc.once('SIGUSR2'); 
 
-        const httpCreate$ = xs.of({
-            id: 'http',
-            action: 'create',
-            config:{
-                port: HTTP_PORT
-            }
-        });
-
-        const httpsCreate$ = xs.of({
+        const httpsServerCreate$ = xs.of({ 
             id: 'https',
             action: 'create',
             secured: true,
@@ -72,6 +62,11 @@ exports.startServer = (port, path, callback) => {
             }
         });
 
+        const httpsServerClose$ = killApp$.mapTo({
+            id:'https',
+            action:'close'
+        }); 
+
         const socketServerCreate$ = httpsServerReady$.map(({ server }) => ({
             id: 'io',
             action: 'create',
@@ -79,6 +74,11 @@ exports.startServer = (port, path, callback) => {
                 server: server
             }
         }));
+
+        const socketServerClose$ = killApp$.mapTo({
+            id:'io',
+            action:'close'
+        });
 
         const httpRootPath$ = dns.getCurrentAddress().map((address) => `https://${address}:${port}`);
         const wsRootPath$ = dns.getCurrentAddress().map((address) => `https://${address}:${port}`);
@@ -93,29 +93,28 @@ exports.startServer = (port, path, callback) => {
         const socketResponse$ = router$.map(c => c.socketResponse).filter(o => !!o).compose(flattenConcurrently);
         const ev3devOutput$ = router$.map(c => c.ev3devOutput).filter(o => !!o).compose(flattenConcurrently);
 
-        const eddystoneAdvertiseUrl$ = ngrok.connect({ addr: HTTP_PORT, ...privateConf.ngrok }).map(url => ({
+        const eddystoneAdvertiseUrl$ = ngrok.connect({ addr: port, ...privateConf.ngrok }).map(url => ({
             call: 'advertiseUrl',
             args: [url, [beaconOptions]]
         })).debug((action) => console.log(`ngrok ready at ${action.args[0]}`));
 
-        const procKill$ = proc.once('SIGUSR2').map(() => {
+        const procKill$ = killApp$.map(() => {
             return ngrok.disconnect().mapTo(ngrok.kill()).flatten();
         }).flatten()
             .mapTo({ call: 'kill', args: [process.pid, 'SIGUSR2'] })
             .replaceError(err => xs.of({ call: 'kill', args: [process.pid, 'SIGUSR2'] }))
             .debug(() => console.log('ngrok clean up'));
 
-        const sinks = {
+        const sinks = { 
             log: xs.merge(
-                httpCreate$.map(o => `create '${o.id}' at ${o.config.port}`),
-                httpsCreate$.map(o => `create '${o.id}' at ${o.config.port}`),
-                httpServerReady$.map(o => `'${o.id}' ready to listen`),
+                killApp$.mapTo('stoping server'),
+                httpsServerCreate$.map(o => `create '${o.id}' at ${o.config.port}`),
                 httpsServerReady$.map(o => `'${o.id}' ready to listen`)
             ),
-            httpServer: xs.merge(httpCreate$, httpsCreate$, httpResponse$),
-            socketServer: xs.merge(socketServerCreate$, socketResponse$),
+            httpServer: xs.merge( httpsServerCreate$,httpsServerClose$, httpResponse$),
+            socketServer: xs.merge(socketServerCreate$,socketServerClose$, socketResponse$),
             ev3dev: ev3devOutput$,
-            eddystone: eddystoneAdvertiseUrl$,
+            eddystone: eddystoneAdvertiseUrl$, 
             proc: procKill$
         }
 

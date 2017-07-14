@@ -40,9 +40,7 @@ export default function init({ socketUrl }) {
     })
 
     const socket = socketClient.select('io');
-
-
-
+    
     const cameraPowerToggleAction$ = DOM.select('.action-camera-power-toggle').events('change').map(e => e.target.checked);
     const fullscreenToggleAction$ = DOM.select('.action-fullscreen-toggle').events('change').map(e => e.target.checked);
     const fullscreenChange$ = fullscreen.change();
@@ -60,13 +58,13 @@ export default function init({ socketUrl }) {
         ).flatten();
     }
 
-    const ioConnect$ = socketEvent('connect');
-    const ioDisconnect$ = socketEvent('disconnect');
+    const ioConnect$ = socket.events('connect');
+    const ioDisconnect$ = socket.events('disconnect');
     const ioConnectStatus$ = ioConnect$.mapTo({ name: 'connect' });
     const ioDisconnectStatus$ = ioDisconnect$.mapTo({ name: 'disconnect' });
 
-    const cameraData$ = socketEvent('camera:data').map(o => o.data);
-    const cameraState$ = socketEvent('camera:state').startWith({ name: 'camera:state', data: 'stopped' });
+    const cameraData$ = socket.events('camera:data').map(o => o.data);
+    const cameraState$ = socket.events('camera:state').startWith({ name: 'camera:state', data: 'stopped' });
     const videoPlayer$ = jsmpeg();
 
     const ioStatus$ = xs.merge(ioConnectStatus$, ioDisconnectStatus$).startWith({ name: 'disconnect' });
@@ -79,7 +77,7 @@ export default function init({ socketUrl }) {
 
     const fullscreen$ = fullscreenToggleAction$.map(() => ({
       action: 'toggle'
-    }));
+    })); 
 
     const cameraPowerToggle$ = ioReady$.map(
       ({ socket }) => cameraPowerToggleAction$.map(
