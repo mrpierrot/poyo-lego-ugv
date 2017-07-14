@@ -40,7 +40,7 @@ export default function init({ socketUrl }) {
     })
 
     const socket = socketClient.select('io');
-    
+
     const cameraPowerToggleAction$ = DOM.select('.action-camera-power-toggle').events('change').map(e => e.target.checked);
     const fullscreenToggleAction$ = DOM.select('.action-fullscreen-toggle').events('change').map(e => e.target.checked);
     const fullscreenChange$ = fullscreen.change();
@@ -50,24 +50,35 @@ export default function init({ socketUrl }) {
       return ioReady$.map(({ socket }) => socket.events(name)).flatten()
     }
 
-    function stickStreamToSocketStream(ioReady$,input$, type, period = 60) {
-      return ioReady$.map( 
-          ({socket}) =>input$.compose(Time.throttle(period))
-            .compose(dropRepeats((a, b) => a.rate == b.rate))
-            .map(data => socket.send(type,{ value: data.rate }))
-        ).flatten();
+    function stickStreamToSocketStream(ioReady$, input$, type, period = 60) {
+      return ioReady$.map(
+        ({ socket }) => input$.compose(Time.throttle(period))
+          .compose(dropRepeats((a, b) => a.rate == b.rate))
+          .map(data => socket.send(type, { value: data.rate }))
+      ).flatten();
     }
 
     const ioConnect$ = socket.events('connect');
     const ioDisconnect$ = socket.events('disconnect');
-    const ioConnectStatus$ = ioConnect$.mapTo({ name: 'connect' });
-    const ioDisconnectStatus$ = ioDisconnect$.mapTo({ name: 'disconnect' });
+    const ioReconnect$ = socket.events('reconnect');
+    const ioReconnectError$ = socket.events('reconnect_error');
+    const ioReconnectFailed$ = socket.events('reconnect_failed');
+    const ioReconnectAttempt$ = socket.events('reconnect_attempt');
+    const ioReconnecting$ = socket.events('reconnecting');
 
     const cameraData$ = socket.events('camera:data').map(o => o.data);
     const cameraState$ = socket.events('camera:state').startWith({ name: 'camera:state', data: 'stopped' });
     const videoPlayer$ = jsmpeg();
 
-    const ioStatus$ = xs.merge(ioConnectStatus$, ioDisconnectStatus$).startWith({ name: 'disconnect' });
+    const ioStatus$ = xs.merge(
+      ioConnect$,
+      ioDisconnect$,
+      ioReconnecting$,
+      ioReconnect$
+    )
+      .debug()
+      .map(e => ({ name: e.event }))
+      .startWith({ name: 'disconnect' }).debug();
 
     const leftStick = isolate(Stick, { DOM: 'left-stick' })({ DOM, props$: xs.of({ mode: HORIZONTAL_STICK_MODE }) });
     const rightStick = isolate(Stick, { DOM: 'right-stick' })({ DOM, props$: xs.of({ mode: VERTICAL_STICK_MODE }) });
@@ -77,7 +88,7 @@ export default function init({ socketUrl }) {
 
     const fullscreen$ = fullscreenToggleAction$.map(() => ({
       action: 'toggle'
-    })); 
+    }));
 
     const cameraPowerToggle$ = ioReady$.map(
       ({ socket }) => cameraPowerToggleAction$.map(
