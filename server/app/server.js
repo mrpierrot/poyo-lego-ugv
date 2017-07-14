@@ -121,7 +121,7 @@ exports.startServer = (port, path, callback) => {
         const sinks = { 
             log: xs.merge( 
                 ioConnection$.mapTo('new connection'),
-                killApp$.mapTo('stoping server'),
+                killApp$.mapTo('stopping server'),
                 httpsServerCreate$.map(o => `create '${o.id}`),
                 httpsServerListening$.map(o => `'${o.id}' ready to listen ${port}`)
             ),
