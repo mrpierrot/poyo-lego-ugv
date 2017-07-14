@@ -47,7 +47,9 @@ exports.startServer = (port, path, callback) => {
         const io = socketServer.select('io');
 
         const httpsServerReady$ = https.events('ready');
+        const httpsServerListening$ = https.events('listening');
         const httpsServerRequest$ = https.events('request');
+        const ioServerReady$ = io.events('ready');
         const ioConnection$ = io.events('connection');
         const serverRequest$ =  httpsServerRequest$;
         const killApp$ = proc.once('SIGUSR2'); 
@@ -56,24 +58,30 @@ exports.startServer = (port, path, callback) => {
             id: 'https',
             action: 'create',
             secured: true,
-            securedConfig,
-            config: {
-                port: port,
-            }
+            securedConfig
         });
-
-        const httpsServerClose$ = killApp$.mapTo({
-            id:'https',
-            action:'close'
-        }); 
 
         const socketServerCreate$ = httpsServerReady$.map(({ server }) => ({
             id: 'io',
             action: 'create',
             config: {
-                server: server
+                server: server 
+            }
+        })); 
+
+        const httpsServerListen$ = xs.combine(httpsServerReady$,ioServerReady$).map( ([{id,server}]) => ({ 
+            id,
+            server,
+            action: 'listen',
+            config: {
+                port,
             }
         }));
+
+        const httpsServerClose$ = killApp$.mapTo({
+            id:'https',
+            action:'close'
+        }); 
 
         const socketServerClose$ = killApp$.mapTo({
             id:'io',
@@ -85,7 +93,7 @@ exports.startServer = (port, path, callback) => {
 
         const router$ = httpRouter({ ...sources, request$: serverRequest$ }, {
             '/': sources => Gateway({ ...sources, props$: httpRootPath$.map(rootPath => ({ appPath: `${rootPath}/app` })) }),
-            '/app': sources => App({ ...sources, ioConnection$, props$: wsRootPath$.map(rootPath => ({ socketUrl: rootPath })) }),
+            '/app': sources => App({ ...sources, ioConnection$:ioConnection$, props$: wsRootPath$.map(rootPath => ({ socketUrl: rootPath })) }),
             '*': NotFound
         });
 
@@ -106,12 +114,13 @@ exports.startServer = (port, path, callback) => {
             .debug(() => console.log('ngrok clean up'));
 
         const sinks = { 
-            log: xs.merge(
+            log: xs.merge( 
+                ioConnection$.mapTo('new connection'),
                 killApp$.mapTo('stoping server'),
-                httpsServerCreate$.map(o => `create '${o.id}' at ${o.config.port}`),
-                httpsServerReady$.map(o => `'${o.id}' ready to listen`)
+                httpsServerCreate$.map(o => `create '${o.id}`),
+                httpsServerListening$.map(o => `'${o.id}' ready to listen ${port}`)
             ),
-            httpServer: xs.merge( httpsServerCreate$,httpsServerClose$, httpResponse$),
+            httpServer: xs.merge( httpsServerCreate$,httpsServerListen$,httpsServerClose$, httpResponse$),
             socketServer: xs.merge(socketServerCreate$,socketServerClose$, socketResponse$),
             ev3dev: ev3devOutput$,
             eddystone: eddystoneAdvertiseUrl$, 
@@ -122,7 +131,7 @@ exports.startServer = (port, path, callback) => {
     }
 
     const drivers = {
-        log: makeLogDriver(),
+        log: makeLogDriver(), 
         dns: dnsDriver,
         httpServer: makeNetDriver(httpServer({ middlewares: [serveStatic('./public')], render: vdom() })),
         socketServer: makeNetDriver(ioServer(io)),
