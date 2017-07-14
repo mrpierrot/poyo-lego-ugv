@@ -21,6 +21,8 @@ import flattenConcurrently from 'xstream/extra/flattenConcurrently';
 
 import Gateway from './components/Gateway';
 import App from './components/App';
+import Camera from './components/Camera';
+import Controls from './components/Controls';
 import NotFound from './components/NotFound';
 
 const securedConfig = {
@@ -41,7 +43,7 @@ exports.startServer = (port, path, callback) => {
 
     function main(sources) {
 
-        const { router, dns, ngrok, proc, httpServer, socketServer } = sources;
+        const { router, dns, ngrok, proc, httpServer, socketServer, ffmpeg } = sources;
 
         const https = httpServer.select('https');
         const io = socketServer.select('io');
@@ -97,9 +99,12 @@ exports.startServer = (port, path, callback) => {
             '*': NotFound
         });
 
+        const controls = Controls({ ioConnection$ });
+        const camera = Camera({ ioConnection$, ffmpeg });
+
         const httpResponse$ = router$.map(c => c.httpResponse).filter(o => !!o).compose(flattenConcurrently);
-        const socketResponse$ = router$.map(c => c.socketResponse).filter(o => !!o).compose(flattenConcurrently);
-        const ev3devOutput$ = router$.map(c => c.ev3devOutput).filter(o => !!o).compose(flattenConcurrently);
+        const socketResponse$ = camera.socketResponse;
+        const ev3devOutput$ = controls.ev3devOutput;
 
         const eddystoneAdvertiseUrl$ = ngrok.connect({ addr: port, ...privateConf.ngrok }).map(url => ({
             call: 'advertiseUrl',

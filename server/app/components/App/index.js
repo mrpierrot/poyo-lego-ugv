@@ -1,22 +1,43 @@
-
 import xs from 'xstream';
+import { html } from 'snabbdom-jsx';
+import { htmlBoilerplate } from '../../utils';
 
-import Controls from './Controls';
-import Camera from './Camera';
-import Route from './Route';
+function intent(request$) {
+     return request$.map( req => req.response);
+}
+
+function model(action$, props$) {
+    return props$.map(
+        (props) => action$.map(
+            (res) => ({ socketUrl: props.socketUrl, res })
+        )
+    ).flatten();
+}
+
+function view(model$) {
+    return model$.map(({ socketUrl, res }) =>
+        res.render(htmlBoilerplate(
+            <div>
+                <div id="app"></div>
+                <script src="/vendor.js"></script>
+                <script src="/app.js"></script>
+                <script>{`require('initialize').default({socketUrl:'${socketUrl}'});`}</script>
+            </div>
+        ), { beforeContent: "<!DOCTYPE html>" }
+        )
+    );
+}
 
 export default function App(sources) {
 
-    const { ioConnection$, ffmpeg, request$, props$ = xs.of({ appPath: null }) } = sources;
+    const { request$, props$ = xs.of({ appPath: null }) } = sources;
 
-    const route = Route({request$, props$});
-    const controls = Controls({ ioConnection$ });
-    const camera = Camera({ ioConnection$, ffmpeg });
+    const action$ = intent(request$);
+    const model$ = model(action$, props$);
+    const view$ = view(model$);
 
     const sinks = {
-        httpResponse: route.httpResponse,
-        socketResponse: camera.socketResponse,
-        ev3devOutput: controls.ev3devOutput
+        httpResponse: view$,
     }
     return sinks;
 }
