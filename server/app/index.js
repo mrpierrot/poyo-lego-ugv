@@ -6,4 +6,4 @@ server.startServer(port,'./public',(data)=>{
         console.log(`Server http running on ${httpPort}`);
         console.log(`Server https running on ${httpsPort}`);
     }
-});
+})

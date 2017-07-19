@@ -69,7 +69,7 @@ exports.startServer = (port, path, callback) => {
             config: {
                 server: server 
             }
-        })); 
+        }));
 
         const httpsServerListen$ = xs.combine(httpsServerReady$,ioServerReady$).map( ([{id,server}]) => ({ 
             id,

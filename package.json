@@ -25,5 +25,7 @@
   },
   "author": "Pierre Chabiland",
   "license": "Beerware",
-  "dependencies": {}
+  "dependencies": {
+    "pm2": "^2.5.0"
+  }
 }
