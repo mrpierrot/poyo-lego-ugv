@@ -5,3 +5,4 @@ server/dist
 server/private.json
 server/certs/*
 !server/certs/.keep
+npm-debug.log
