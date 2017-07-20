@@ -1,6 +1,6 @@
 const pm2 = require('pm2');
 const _ = require('lodash');
-const conf = require('./pm2.json');
+const conf = require('./dev.json');
 const notifier = require('node-notifier');
 
 const mainConf = conf.apps[0];

@@ -1,6 +1,7 @@
 
 import xs from 'xstream'
 import fs from 'fs';
+import os from 'os';
 import ngrok from './ngrok';
 import eddystoneBeacon from 'eddystone-beacon';
 import privateConf from '../private.json';
@@ -25,6 +26,10 @@ import Camera from './components/Camera';
 import Controls from './components/Controls';
 import NotFound from './components/NotFound';
 
+const env = process.env.NODE_ENV;
+console.log('env : '+env);
+
+
 const securedConfig = {
     key: fs.readFileSync(__dirname + '/..' + privateConf.ssl.key),
     cert: fs.readFileSync(__dirname + '/..' + privateConf.ssl.cert)
@@ -41,20 +46,33 @@ const HTTP_PORT = 8080;
 
 exports.startServer = (port, path, callback) => {
 
+    const httpPort = port+1;
+    const httpsPort = port;
+
     function main(sources) {
 
         const { router, dns, ngrok, proc, httpServer, socketServer, ffmpeg } = sources;
 
+        const http = httpServer.select('http');
         const https = httpServer.select('https');
         const io = socketServer.select('io');
 
+        const httpServerReady$ = http.events('ready');
         const httpsServerReady$ = https.events('ready');
         const httpsServerListening$ = https.events('listening');
+        const httpServerRequest$ = http.events('request');
         const httpsServerRequest$ = https.events('request');
         const ioServerReady$ = io.events('ready');
         const ioConnection$ = io.events('connection');
-        const serverRequest$ =  httpsServerRequest$;
         const killApp$ = proc.once('SIGUSR2'); 
+
+        const httpServerCreate$ = xs.of({ 
+            id: 'http',
+            action: 'create',
+            config: {
+                port:httpPort
+            }
+        });
 
         const httpsServerCreate$ = xs.of({ 
             id: 'https',
@@ -76,9 +94,14 @@ exports.startServer = (port, path, callback) => {
             server,
             action: 'listen',
             config: {
-                port,
+                port:httpsPort,
             }
         }));
+
+        const httpServerClose$ = killApp$.mapTo({
+            id:'http',
+            action:'close'
+        }); 
 
         const httpsServerClose$ = killApp$.mapTo({
             id:'https',
@@ -90,23 +113,27 @@ exports.startServer = (port, path, callback) => {
             action:'close'
         });
 
-        const httpRootPath$ = dns.getCurrentAddress().map((address) => `https://${address}:${port}`);
-        const wsRootPath$ = dns.getCurrentAddress().map((address) => `https://${address}:${port}`);
+        const httpsRootPath$ = dns.getCurrentAddress().map((address) => `https://${address}:${httpsPort}`);
 
-        const router$ = httpRouter({ ...sources, request$: serverRequest$ }, {
-            '/': sources => Gateway({ ...sources, props$: httpRootPath$.map(rootPath => ({ appPath: `${rootPath}/app` })) }),
-            '/app': sources => App({ ...sources, ioConnection$:ioConnection$, props$: wsRootPath$.map(rootPath => ({ socketUrl: rootPath })) }),
+        const httpRouter$ = httpRouter({ ...sources, request$: httpServerRequest$ }, {
+            '/': sources => Gateway({ ...sources, props$: httpsRootPath$.map(rootPath => ({ appPath: `${rootPath}/app` })) }),
+            '*': NotFound
+        });
+
+        const httpsRouter$ = httpRouter({ ...sources, request$: httpsServerRequest$ }, {
+            '/app': sources => App({ ...sources, ioConnection$:ioConnection$, props$: httpsRootPath$.map(rootPath => ({ socketUrl: rootPath })) }),
             '*': NotFound
         });
 
         const controls = Controls({ ioConnection$ });
         const camera = Camera({ ioConnection$, ffmpeg });
 
-        const httpResponse$ = router$.map(c => c.httpResponse).filter(o => !!o).compose(flattenConcurrently);
+        const httpResponse$ = httpRouter$.map(c => c.httpResponse).filter(o => !!o).compose(flattenConcurrently);
+        const httpsResponse$ = httpsRouter$.map(c => c.httpResponse).filter(o => !!o).compose(flattenConcurrently);
         const socketResponse$ = camera.socketResponse;
         const ev3devOutput$ = controls.ev3devOutput;
 
-        const eddystoneAdvertiseUrl$ = ngrok.connect({ addr: port, ...privateConf.ngrok }).map(url => ({
+        const eddystoneAdvertiseUrl$ = ngrok.connect({ addr: httpPort, ...privateConf.ngrok }).map(url => ({
             call: 'advertiseUrl',
             args: [url, [beaconOptions]]
         })).debug((action) => console.log(`ngrok ready at ${action.args[0]}`));
@@ -122,10 +149,19 @@ exports.startServer = (port, path, callback) => {
             log: xs.merge( 
                 ioConnection$.mapTo('new connection'),
                 killApp$.mapTo('stopping server'),
+                httpServerCreate$.map(o => `create '${o.id} ready ti listen ${httpsPort}`),
                 httpsServerCreate$.map(o => `create '${o.id}`),
-                httpsServerListening$.map(o => `'${o.id}' ready to listen ${port}`)
+                httpsServerListening$.map(o => `'${o.id}' ready to listen ${httpsPort}`)
             ),
-            httpServer: xs.merge( httpsServerCreate$,httpsServerListen$,httpsServerClose$, httpResponse$),
+            httpServer: xs.merge( 
+                httpServerCreate$,
+                httpsServerCreate$,
+                httpsServerListen$,
+                httpServerClose$, 
+                httpsServerClose$, 
+                httpResponse$,
+                httpsResponse$
+            ),
             socketServer: xs.merge(socketServerCreate$,socketServerClose$, socketResponse$),
             ev3dev: ev3devOutput$,
             eddystone: eddystoneAdvertiseUrl$, 
@@ -144,8 +180,7 @@ exports.startServer = (port, path, callback) => {
         ngrok: makeNgrokDriver(),
         eddystone: makeEddystoneBeaconDriver(),
         ev3dev: makeEv3devDriver(),
-        ffmpeg: makeFfmpegDriver(createMacOSCameraCommand)
-        //ffmpeg:makeFfmpegDriver(createRaspicamCommand)
+        ffmpeg:makeFfmpegDriver(os.platform()==="darwin"?createMacOSCameraCommand:createRaspicamCommand)
     };
 
     run(main, drivers);

@@ -11,6 +11,7 @@
     "sync": "./bin/sync.sh once ./server robot@ev3dev.local .",
     "watch": "./bin/sync.sh watch ./server robot@ev3dev.local .",
     "ssh-close": "./bin/sync.sh close robot@ev3dev.local",
+    "kill": "npm --prefix ./server run serve:kill",
     "install:all": "npm --prefix ./webapp install && npm --prefix ./server install && npm install"
   },
   "keywords": [

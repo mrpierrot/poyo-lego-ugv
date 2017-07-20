@@ -16,7 +16,7 @@ ssh_close_conn(){
 }
 
 synchronize(){
-    rsync -e "ssh -o 'ControlPath=$HOME/.ssh/ctl/%L-%r@%h:%p'" -avq --partial --progress --exclude \".git\" \"node_modules\" $1 $2:~/$3
+    rsync -e "ssh -o 'ControlPath=$HOME/.ssh/ctl/%L-%r@%h:%p'" -avq --partial --progress --exclude \".git\" --exclude \"node_modules\" $1 $2:~/$3
 }
 
 watch() {
