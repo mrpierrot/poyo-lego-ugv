@@ -26,7 +26,7 @@ import Camera from './components/Camera';
 import Controls from './components/Controls';
 import NotFound from './components/NotFound';
 
-const env = process.env.NODE_ENV;
+const env = process.env.NODE_ENV || 'developement';
 console.log('env : '+env);
 
 
@@ -64,7 +64,7 @@ exports.startServer = (port, path, callback) => {
         const httpsServerRequest$ = https.events('request');
         const ioServerReady$ = io.events('ready');
         const ioConnection$ = io.events('connection');
-        const killApp$ = proc.once('SIGUSR2'); 
+        const killApp$ = proc.once('SIGINT'); 
 
         const httpServerCreate$ = xs.of({ 
             id: 'http',
@@ -133,23 +133,27 @@ exports.startServer = (port, path, callback) => {
         const socketResponse$ = camera.socketResponse;
         const ev3devOutput$ = controls.ev3devOutput;
 
-        const eddystoneAdvertiseUrl$ = ngrok.connect({ addr: httpPort, ...privateConf.ngrok }).map(url => ({
-            call: 'advertiseUrl',
-            args: [url, [beaconOptions]]
-        })).debug((action) => console.log(`ngrok ready at ${action.args[0]}`));
+        const eddystoneAdvertiseUrl$ = httpServerReady$.map( () => 
+            ngrok.connect({ addr: httpPort, ...privateConf.ngrok })
+            .map(url => ({
+                call: 'advertiseUrl',
+                args: [url, [beaconOptions]]
+            }))
+            .debug((action) => console.log(`ngrok ready at ${action.args[0]}`))
+        ).flatten();
 
         const procKill$ = killApp$.map(() => {
             return ngrok.disconnect().mapTo(ngrok.kill()).flatten();
         }).flatten()
-            .mapTo({ call: 'kill', args: [process.pid, 'SIGUSR2'] })
-            .replaceError(err => xs.of({ call: 'kill', args: [process.pid, 'SIGUSR2'] }))
+            .mapTo({ call: 'kill', args: [process.pid, 'SIGINT'] })
+            .replaceError(err => xs.of({ call: 'kill', args: [process.pid, 'SIGINT'] }))
             .debug(() => console.log('ngrok clean up'));
-
+ 
         const sinks = { 
             log: xs.merge( 
                 ioConnection$.mapTo('new connection'),
                 killApp$.mapTo('stopping server'),
-                httpServerCreate$.map(o => `create '${o.id} ready ti listen ${httpsPort}`),
+                httpServerCreate$.map(o => `create '${o.id} ready to listen ${o.config.port}`),
                 httpsServerCreate$.map(o => `create '${o.id}`),
                 httpsServerListening$.map(o => `'${o.id}' ready to listen ${httpsPort}`)
             ),
