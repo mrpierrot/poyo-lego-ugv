@@ -7,7 +7,7 @@
     "start": "nodemon app/index.js --exec babel-node",
     "build": "babel app -d dist",
     "watch": "babel app -d dist -w",
-    "serve:dist": "pm2 start pm2/prod.json",
+    "register": "pm2 start pm2/prod.json",
     "serve:dev": "node pm2/pm2.dev.js",
     "serve:kill": "pm2 delete soul notify",
     "test": "echo \"Error: no test specified\" && exit 1"
