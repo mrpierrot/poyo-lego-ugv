@@ -7,8 +7,12 @@
             "force": true,
             "ignore_watch": "./public",
             "max_memory_restart": "100M",
+            "env": {
+                "NODE_ENV": "developement"
+            },
             "env_production": {
-                "NODE_ENV": "production"
+                "NODE_ENV": "production",
+                "FFMPEG_PATH": "/home/robot/server/bin/ffmpeg.sh"
             }
         }
     ]

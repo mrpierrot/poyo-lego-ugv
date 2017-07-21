@@ -1,4 +1,5 @@
 const ffmpeg = require('fluent-ffmpeg');
+if(process.env.FFMPEG_PATH)ffmpeg.setFfmpegPath(process.env.FFMPEG_PATH);
 
 exports.createMacOSCameraCommand = function createMacOSCameraCommand() {
     return ffmpeg().input("0")
@@ -15,6 +16,7 @@ exports.createMacOSCameraCommand = function createMacOSCameraCommand() {
 // ffmpeg -f avfoundation -framerate 30 -i "0" -target pal-vcd ./test.mpg
 
 exports.createRaspicamCommand = function createRaspicamCommand() {
+    //ffmpeg.setFfmpegPath('/home/robot/server/bin/altffmpeg.sh');
     return ffmpeg().input("/dev/video0")
         .inputOptions([
             '-f v4l2',

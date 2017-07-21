@@ -28,7 +28,7 @@ import NotFound from './components/NotFound';
 
 const env = process.env.NODE_ENV || 'developement';
 console.log('env : '+env);
-
+console.log('FFMPEG_PATH : '+process.env.FFMPEG_PATH);
 
 const securedConfig = {
     key: fs.readFileSync(__dirname + '/..' + privateConf.ssl.key),
