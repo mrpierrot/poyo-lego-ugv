@@ -1,14 +1,8 @@
 const pm2 = require('pm2');
 const _ = require('lodash');
-const conf = require('./dev.json')
-
-const NAME = 'soul';
-
-const NOTIFY_APP = {
-    name: "notify",
-    script: "./pm2/pm2-notify.js",
-    max_memory_restart: "100M"
-}
+const conf = require('./dev.json');
+const notifier = require('node-notifier');
+const mainConf = conf.apps[0];
 
 function startApp(app) {
     return new Promise(function(resolve, reject){
@@ -29,14 +23,35 @@ pm2.connect(true,function (err) {
     }
 
     Promise.all([
-        startApp(conf.apps[0]),
-        startApp(NOTIFY_APP)
+        startApp(conf.apps[0])
     ])
         .then(() => {
             console.log('apps launched')
-           // pm2.disconnect();
         });
 
 });
+
+pm2.launchBus(function(err, bus) {
+
+  if(err) {
+    throw err
+  }
+
+  let lastError = null;
+
+  bus.on('log:out', function(e) {
+    console.log('log:out : ',e.data);
+  })
+
+  bus.on('log:err', function(e) {
+    if(e.process.name != mainConf.name)return;
+    if(lastError != e.data){
+        notifier.notify(`Server Error : ${e.data}`);
+    }
+    lastError = e.data
+  })
+
+});
+
 
 

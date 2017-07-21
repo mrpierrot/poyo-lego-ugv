@@ -5,6 +5,7 @@
             "script": "./dist/index.js",
             "watch": true,
             "force": true,
+            "ignore_watch": "./public",
             "max_memory_restart": "100M",
             "env_production": {
                 "NODE_ENV": "production"

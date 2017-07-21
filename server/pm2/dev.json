@@ -4,19 +4,8 @@
             "name": "soul",
             "script": "./app/index.js",
             "watch": true,
+            "ignore_watch": "./public",
             "force": true,
-            "interpreter": "babel-node",
-            "max_memory_restart": "100M",
-            "env": {
-                "NODE_ENV": "development"
-            },
-            "env_production": {
-                "NODE_ENV": "production"
-            }
-        },
-        {
-            "name": "notify",
-            "script": "./pm2-notify.js",
             "interpreter": "babel-node",
             "max_memory_restart": "100M",
             "env": {
