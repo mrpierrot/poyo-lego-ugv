@@ -1,4 +1,5 @@
 const xs = require('xstream').default;
+const { exec } = require('child_process');
 
 function createStreamProducer(commandMaker) {
 
@@ -27,6 +28,11 @@ function createStreamProducer(commandMaker) {
 
         stop(){
             console.log('ffmpeg:stop');
+            console.log('ffmpeg: try to kill process');
+            exec('pkill ffmpeg', (err, stdout, stderr) => {
+                console.log('ffmpeg: process killed');
+                if(err)console.error(err);
+            });
             command.kill();
             ffstream.removeListener('data',dataListener);
             ffstream.removeListener('error',errorListener);
